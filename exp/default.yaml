@@ -1,0 +1,26 @@
+name: test
+
+model:
+  model_ckpt: google/vit-base-patch16-224-in21k
+
+train:
+  num_epochs: 10
+  learning_rate: 0.00001
+  weight_decay: 0.0001
+
+data:
+  images_root: null
+  train_csv: null
+  val_csv: null
+  mode: classification
+  train_invalid_files:
+    - 103/29a31ebf1567693f4644c8ba3476ca9a72ee07fe67a5860d98707a0a.jpg
+  val_invalid_files: null
+  exclude_labels:
+    - 8
+    - 9
+    - 10
+
+wandb:
+  project: test
+  group: test

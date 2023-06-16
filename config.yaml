@@ -1,0 +1,6 @@
+hydra:
+  job:
+    chdir: false
+
+defaults:
+  - exp: default

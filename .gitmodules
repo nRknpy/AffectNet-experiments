@@ -1,0 +1,3 @@
+[submodule "scripts/SupContrast"]
+	path = scripts/SupContrast
+	url = https://github.com/HobbitLong/SupContrast.git

@@ -11,13 +11,16 @@ pillow = "*"
 matplotlib = "*"
 scipy = "*"
 scikit-learn = "*"
-transformers = "*"
 datasets = "*"
 accelerate = "*"
 wandb = "*"
 torchvision = "*"
 torchaudio = "*"
 mypy = "*"
+hydra-core = "*"
+omegaconf = "*"
+transformers = "*"
+torchaffectnet = {git = "https://github.com/nRknpy/AffectNet_torch.git"}
 
 [dev-packages]
 autopep8 = "*"
