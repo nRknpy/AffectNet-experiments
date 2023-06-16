@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List, Literal, Dict, Any
+from dataclasses import Field, dataclass, fields, field
+from typing import List, Literal, Dict, Any, get_type_hints
 from torchaffectnet.const import ID2EXPRESSION
 from omegaconf import OmegaConf
 
@@ -17,7 +17,7 @@ class ContrastiveModelConfig(ModelConfig):
 class TrainConfig:
     num_epochs: int = 10
     batch_size: int = 32
-    learing_rate: float = 1e-5
+    learning_rate: float = 1e-5
     weight_decay: float = 1e-4
     logging_strategy: Literal['steps', 'epoch'] = 'steps'
     logging_steps: int | None = 1000

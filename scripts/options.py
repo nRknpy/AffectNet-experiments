@@ -59,7 +59,6 @@ def finetuning_options(cfg: FinetuningExpConfig):
 
 def options(cfg: ContrastiveExpConfig | FinetuningExpConfig):
     if cfg.exp.type == 'contrastive':
-        print('debug')
         return contrastive_options(cfg)
     elif cfg.exp.type == 'finetuning':
         return finetuning_options(cfg)

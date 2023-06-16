@@ -5,6 +5,7 @@ import pandas as pd
 import os
 from omegaconf import OmegaConf
 import argparse
+from hydra.experimental import compose, initialize_config_dir
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
 from torchaffectnet.collators import Collator
@@ -74,12 +75,13 @@ def compute_accuracy(eval_pred):
     return acc_met.compute(predictions=predictions, references=labels)
 
 
-def evaluate(cfg: ContrastiveExpConfig | FinetuningExpConfig, opt: Options, model, feature_extractor, umap_n_neighbors, device, output_dir, accuracy=False):
+def evaluate(images_root, csvfile, exclude_labels, invalid_files, model, feature_extractor, umap_n_neighbors, device, output_dir, accuracy=False):
+    model = model.to(device)
     datasets = prepare_datasets(
-        cfg.exp.data.images_root, cfg.exp.data.val_csv, cfg.exp.data.exclude_labels, feature_extractor)
+        images_root, csvfile, exclude_labels, feature_extractor)
 
     cat_id2label = ID2EXPRESSION
-    for label in cfg.exp.data.exclude_labels:
+    for label in exclude_labels:
         del cat_id2label[label]
     cat_label2id = {v: k for k, v in cat_id2label.items()}
 
@@ -112,7 +114,8 @@ def evaluate(cfg: ContrastiveExpConfig | FinetuningExpConfig, opt: Options, mode
             confusion_matrix=cm, display_labels=labels)
         fig, ax = plt.subplots(figsize=(12, 12))
         conmat = disp.plot(ax=ax)
-        output['confusion_matrix.png'] = conmat
+        conmat.figure_.savefig(os.path.join(
+            output_dir, 'confusion_matrix.png'))
 
     id2labels = [
         cat_id2label,
@@ -125,17 +128,15 @@ def evaluate(cfg: ContrastiveExpConfig | FinetuningExpConfig, opt: Options, mode
 
     for i, dataset in enumerate(datasets[:2]):
         tokens, targets = CLS_tokens(model, dataset, device)
-        fig = plot_tokens_category(
+        fig, legend = plot_tokens_category(
             tokens, targets, umap_n_neighbors, id2labels[i])
-        output[output_names[i]] = fig
-
-    for name, fig in output.values():
-        fig.savefig(os.path.join(output_dir, name))
+        fig.savefig(os.path.join(output_dir, output_names[i]), bbox_extra_artists=[
+                    legend], bbox_inches='tight')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('config', help='yaml file')
+    parser.add_argument('config', help='exp yaml file')
     parser.add_argument('model', help='model')
     parser.add_argument('output_dir', help='output directory')
     parser.add_argument('--accuracy', action='store_true')
@@ -143,11 +144,24 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    cfg: ContrastiveExpConfig | FinetuningExpConfig = OmegaConf.load(
-        args.config)
-    opt = options(cfg)
+
+    if not os.path.exists(args.config):
+        print(f"Can not find file: {args.config}.")
+        exit(-1)
+
+    with initialize_config_dir(config_dir=os.path.join(os.path.dirname(__file__), '..')):
+        cfg: ContrastiveExpConfig | FinetuningExpConfig = compose(
+            config_name=args.config)
+    cfg = OmegaConf.to_object(cfg)
+    while not 'name' in cfg.keys():
+        print(cfg.keys())
+        cfg = cfg[list(cfg.keys())[0]]
+    print(cfg)
+
     model = ViTForImageClassification.from_pretrained(args.model)
     feature_extractor = ViTFeatureExtractor.from_pretrained(args.model)
 
-    outputs = evaluate(cfg, opt, model, feature_extractor,
+    outputs = evaluate(cfg['data']['images_root'], cfg['data']['val_csv'],
+                       cfg['data']['exclude_labels'], cfg['data']['val_invalid_files'],
+                       model, feature_extractor,
                        20, device, args.output_dir, args.accuracy)

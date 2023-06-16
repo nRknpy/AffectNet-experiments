@@ -34,7 +34,6 @@ def plot_tokens_category(tokens, labels, n_neighbors, id2label):
     ys = labels.numpy()
     fig = plt.figure()
     ax = fig.add_subplot()
-    ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel('feature-1')
     ax.set_ylabel('feature-2')
     cmap = cm.get_cmap('gist_ncar')
@@ -51,8 +50,10 @@ def plot_tokens_category(tokens, labels, n_neighbors, id2label):
                         s=3,)
         label2point[id2label[y]] = mp
     labels, handles = zip(*sorted(label2point.items()))
-    fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(1.01, 0.5))
-    return fig
+    # fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 0.5))
+    legend = ax.legend(handles, labels, loc='upper left',
+                       bbox_to_anchor=(1, 0.5))
+    return fig, legend
 
 
 def plot_tokens_continuous(tokens, targets, n_neighbors):

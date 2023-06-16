@@ -65,7 +65,7 @@ def main(cfg: ContrastiveExpConfig):
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     output_dir = hydra_cfg['runtime']['output_dir']
 
-    print(cfg)
+    print(OmegaConf.to_yaml(cfg))
     validate_cfg(cfg)
     opt = options(cfg)
     print(opt)
@@ -79,7 +79,7 @@ def main(cfg: ContrastiveExpConfig):
     trainer_args = TrainingArguments(
         os.path.join(output_dir, cfg.exp.name),
         save_strategy='epoch',
-        learning_rate=cfg.exp.train.learing_rate,
+        learning_rate=cfg.exp.train.learning_rate,
         per_device_train_batch_size=int(
             cfg.exp.train.batch_size / torch.cuda.device_count()),
         num_train_epochs=cfg.exp.train.num_epochs,
@@ -101,7 +101,9 @@ def main(cfg: ContrastiveExpConfig):
     trainer.train()
 
     # Evaluate
-    evaluate(cfg, opt, model, feature_extractor, 20, device, output_dir, False)
+    evaluate(cfg.exp.data.images_root, cfg.exp.data.val_csv, cfg.exp.data.exclude_labels,
+             cfg.exp.data.val_invalid_files,
+             model, feature_extractor, 20, device, output_dir, False)
 
 
 if __name__ == '__main__':
