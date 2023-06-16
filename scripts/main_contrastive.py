@@ -1,8 +1,20 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
+
+
 from typing import Any, Dict, Tuple
 import torch
 import wandb
-import os
-from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments
+from evaluate import evaluate
+from trainer import SupConTrainer
+from dataset import AffectNetDatasetForSupConWithValence
+from model import load_model
+from options import options, Options
+from config import ContrastiveExpConfig, validate_cfg
+from omegaconf import OmegaConf
+import hydra
+from torchaffectnet.collators import ContrastiveCollator
+from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
 from torchvision.transforms import (Compose,
                                     Normalize,
                                     Resize,
@@ -12,17 +24,7 @@ from torchvision.transforms import (Compose,
                                     ColorJitter,
                                     RandomGrayscale,
                                     ToTensor)
-from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
-from torchaffectnet.collators import ContrastiveCollator
-import hydra
-from omegaconf import OmegaConf
-
-from config import ContrastiveExpConfig, validate_cfg
-from options import options, Options
-from model import load_model
-from dataset import AffectNetDatasetForSupConWithValence
-from trainer import SupConTrainer
-from evaluate import evaluate
+from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments
 
 
 def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
@@ -62,6 +64,7 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
 @hydra.main(version_base=None, config_path='../', config_name='config')
 def main(cfg: ContrastiveExpConfig):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(torch.cuda.device_count())
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     output_dir = hydra_cfg['runtime']['output_dir']
 
