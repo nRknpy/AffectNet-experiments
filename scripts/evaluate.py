@@ -14,6 +14,7 @@ from dataset import AffectNetDatasetForSupConWithValence
 from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer, TrainingArguments
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import wandb
 
@@ -79,6 +80,12 @@ def compute_accuracy(eval_pred):
     predictions, labels = eval_pred
     predictions = np.argmax(predictions, axis=1)
     return acc_met.compute(predictions=predictions, references=labels)
+
+
+def compute_rmse(eval_pred):
+    preds, targets = eval_pred
+    rmse = mean_squared_error(targets, preds, squared=False)
+    return {'rmse': rmse}
 
 
 def evaluate(images_root,

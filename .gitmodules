@@ -1,3 +1,6 @@
 [submodule "scripts/SupContrast"]
 	path = scripts/SupContrast
 	url = https://github.com/HobbitLong/SupContrast.git
+[submodule "scripts/KDEweightedMSE"]
+	path = scripts/KDEweightedMSE
+	url = https://github.com/nRknpy/KDEweightedMSE.git

@@ -64,6 +64,9 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
 
 @hydra.main(version_base=None, config_path='../', config_name='config')
 def main(cfg: ContrastiveExpConfig):
+    if cfg.exp.type != 'contrastive':
+        print('type must be "contrastive".')
+        exit(-1)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(torch.cuda.device_count())
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
@@ -104,6 +107,7 @@ def main(cfg: ContrastiveExpConfig):
     )
 
     trainer.train()
+    trainer.save_model(os.path.join(output_dir, '/model'))
 
     # Evaluate
     print('Evaluating...')

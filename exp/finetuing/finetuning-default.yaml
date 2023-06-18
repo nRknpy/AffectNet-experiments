@@ -1,4 +1,4 @@
-name: finetuning
+name: test
 type: finetuning
 
 target: expression
@@ -8,16 +8,17 @@ model:
 
 train:
   num_epochs: 10
-  batch_size: 32
+  batch_size: 16
   learning_rate: 0.00001
   weight_decay: 0.0001
   logging_strategy: steps
   logging_steps: 1000
+  only_head: false
 
 data:
-  images_root: ../Affectnet/
-  train_csv: ../Affectnet/training.csv
-  val_csv: ../Affectnet/validation.csv
+  images_root: ../lab-work/Affectnet/Manually_Annotated/Manually_Annotated_Images/
+  train_csv: ../lab-work/Affectnet/training.csv
+  val_csv: ../lab-work/Affectnet/validation.csv
   train_invalid_files:
     [103/29a31ebf1567693f4644c8ba3476ca9a72ee07fe67a5860d98707a0a.jpg]
   val_invalid_files: []

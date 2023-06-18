@@ -21,6 +21,7 @@ class TrainConfig:
     weight_decay: float = 1e-4
     logging_strategy: Literal['steps', 'epoch'] = 'steps'
     logging_steps: int | None = 1000
+    only_head: bool | None = False
 
 
 @dataclass
