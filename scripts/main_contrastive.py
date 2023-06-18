@@ -25,6 +25,7 @@ from torchvision.transforms import (Compose,
                                     RandomGrayscale,
                                     ToTensor)
 from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments
+from utils import try_finish_wandb
 
 
 def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
@@ -122,6 +123,9 @@ def main(cfg: ContrastiveExpConfig):
              wandb_group=cfg.exp.wandb.group,
              wandb_name=cfg.exp.name,
              after_train=True)
+    
+    # wandb.finish()
+    try_finish_wandb()
 
 
 if __name__ == '__main__':

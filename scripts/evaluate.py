@@ -20,7 +20,7 @@ import wandb
 from visualizer import CLS_tokens, plot_tokens_category, plot_tokens_continuous
 from config import ContrastiveExpConfig, FinetuningExpConfig
 from options import Options, options
-from utils import exclude_id
+from utils import exclude_id, try_finish_wandb
 
 
 def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], invalid_files: List[str], feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
@@ -214,4 +214,5 @@ if __name__ == '__main__':
                        wandb_id=args.wandb_id,
                        after_train=False)
     if args.wandb_log:
-        wandb.finish()
+        # wandb.finish()
+        try_finish_wandb()
