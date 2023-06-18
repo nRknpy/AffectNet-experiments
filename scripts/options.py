@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from torchaffectnet.const import ID2EXPRESSION
 
 from config import ContrastiveExpConfig, FinetuningExpConfig
+from utils import exclude_id
 
 
 @dataclass
@@ -34,10 +35,7 @@ def finetuning_options(cfg: FinetuningExpConfig):
     if cfg.exp.target == 'expression':
         num_labels = 11 - len(cfg.exp.data.exclude_labels)
         problem_type = 'single_label_classification'
-        id2label = ID2EXPRESSION
-        for label in cfg.exp.data.exclude_labels:
-            del id2label[label]
-        label2id = {v: k for k, v in id2label.items()}
+        id2label, label2id = exclude_id(cfg.exp.data.exclude_labels)
 
     elif cfg.exp.target == 'valence' or cfg.exp.target == 'arousal':
         num_labels = 1

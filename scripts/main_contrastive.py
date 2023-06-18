@@ -76,6 +76,7 @@ def main(cfg: ContrastiveExpConfig):
     train_dataset = prepare_dataset(cfg, opt, feature_extractor)
 
     # Train
+    print('Training...')
     wandb.init(project=cfg.exp.wandb.project,
                group=cfg.exp.wandb.group, name=cfg.exp.name)
 
@@ -104,9 +105,23 @@ def main(cfg: ContrastiveExpConfig):
     trainer.train()
 
     # Evaluate
-    evaluate(cfg.exp.data.images_root, cfg.exp.data.val_csv, cfg.exp.data.exclude_labels,
+    print('Evaluating...')
+    evaluate(cfg.exp.data.images_root,
+             cfg.exp.data.val_csv,
+             cfg.exp.data.exclude_labels,
              cfg.exp.data.val_invalid_files,
-             model, feature_extractor, 20, device, output_dir, False)
+             model,
+             feature_extractor,
+             20,
+             device,
+             output_dir,
+             False,
+             wandb_log=True,
+             wandb_resume=False,
+             wandb_proj=cfg.exp.wandb.project,
+             wandb_group=cfg.exp.wandb.group,
+             wandb_name=cfg.exp.name,
+             after_train=True)
 
 
 if __name__ == '__main__':

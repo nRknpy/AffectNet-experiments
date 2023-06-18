@@ -15,13 +15,15 @@ from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+import wandb
 
 from visualizer import CLS_tokens, plot_tokens_category, plot_tokens_continuous
 from config import ContrastiveExpConfig, FinetuningExpConfig
 from options import Options, options
+from utils import exclude_id
 
 
-def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
+def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], invalid_files: List[str], feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
     normalize = Normalize(mean=feature_extractor.image_mean,
                           std=feature_extractor.image_std)
     transform = Compose([
@@ -33,20 +35,24 @@ def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], 
     category_dataset = AffectNetDataset(csvfile,
                                         images_root,
                                         exclude_label=exclude_labels,
+                                        invalid_files=invalid_files,
                                         transform=transform,
                                         mode='classification')
     cat_valence_dataset = AffectNetDatasetForSupConWithValence(csvfile,
                                                                images_root,
                                                                exclude_label=exclude_labels,
+                                                               invalid_files=invalid_files,
                                                                transform=transform)
     valence_dataset = AffectNetDataset(csvfile,
                                        images_root,
                                        exclude_label=exclude_labels,
+                                       invalid_files=invalid_files,
                                        transform=transform,
                                        mode='valence')
     arousal_dataset = AffectNetDataset(csvfile,
                                        images_root,
                                        exclude_label=exclude_labels,
+                                       invalid_files=invalid_files,
                                        transform=transform,
                                        mode='arousal')
 
@@ -75,17 +81,39 @@ def compute_accuracy(eval_pred):
     return acc_met.compute(predictions=predictions, references=labels)
 
 
-def evaluate(images_root, csvfile, exclude_labels, invalid_files, model, feature_extractor, umap_n_neighbors, device, output_dir, accuracy=False):
+def evaluate(images_root,
+             csvfile,
+             exclude_labels,
+             invalid_files,
+             model,
+             feature_extractor,
+             umap_n_neighbors,
+             device,
+             output_dir,
+             accuracy=False,
+             wandb_log=False,
+             wandb_resume=False,
+             wandb_proj=None,
+             wandb_group=None,
+             wandb_name=None,
+             wandb_id=None,
+             after_train=False):
+    if wandb_log:
+        if wandb_resume:
+            if wandb_id == None:
+                print('To resume wandb run, it need wandb_id.')
+                exit(-1)
+            wandb.init(project=wandb_proj, group=wandb_group, name=wandb_name, id=wandb_id, resume='must')
+        else:
+            if not after_train:
+                wandb.init(project=wandb_proj, group=wandb_group, name=wandb_name)
+    
     model = model.to(device)
     datasets = prepare_datasets(
-        images_root, csvfile, exclude_labels, feature_extractor)
+        images_root, csvfile, exclude_labels, invalid_files, feature_extractor)
 
-    cat_id2label = ID2EXPRESSION
-    for label in exclude_labels:
-        del cat_id2label[label]
-    cat_label2id = {v: k for k, v in cat_id2label.items()}
+    cat_id2label, cat_label2id = exclude_id(exclude_labels)
 
-    output = {}
     if accuracy:
         args = TrainingArguments(
             'evaluate',
@@ -114,6 +142,8 @@ def evaluate(images_root, csvfile, exclude_labels, invalid_files, model, feature
             confusion_matrix=cm, display_labels=labels)
         fig, ax = plt.subplots(figsize=(12, 12))
         conmat = disp.plot(ax=ax)
+        if wandb_log:
+            wandb.log({'confusion_matrix.png': wandb.Image(conmat.figure_)})
         conmat.figure_.savefig(os.path.join(
             output_dir, 'confusion_matrix.png'))
 
@@ -132,6 +162,9 @@ def evaluate(images_root, csvfile, exclude_labels, invalid_files, model, feature
             tokens, targets, umap_n_neighbors, id2labels[i])
         fig.savefig(os.path.join(output_dir, output_names[i]), bbox_extra_artists=[
                     legend], bbox_inches='tight')
+        fig.add_artist(legend)
+        if wandb_log:
+            wandb.log({output_names[i]: wandb.Image(fig)})
 
 
 if __name__ == '__main__':
@@ -139,7 +172,10 @@ if __name__ == '__main__':
     parser.add_argument('config', help='exp yaml file')
     parser.add_argument('model', help='model')
     parser.add_argument('output_dir', help='output directory')
-    parser.add_argument('--accuracy', action='store_true')
+    parser.add_argument('wandb_id', help='wandb run id')
+    parser.add_argument('--accuracy', action='store_true', help='evaluate accuracy')
+    parser.add_argument('--wandb_log', action='store_true', help='wandb logging')
+    parser.add_argument('--wandb_resume', action='store_true', help='resume exsisting wandb run (require wandb_id)')
 
     args = parser.parse_args()
 
@@ -161,7 +197,21 @@ if __name__ == '__main__':
     model = ViTForImageClassification.from_pretrained(args.model)
     feature_extractor = ViTFeatureExtractor.from_pretrained(args.model)
 
-    outputs = evaluate(cfg['data']['images_root'], cfg['data']['val_csv'],
-                       cfg['data']['exclude_labels'], cfg['data']['val_invalid_files'],
-                       model, feature_extractor,
-                       20, device, args.output_dir, args.accuracy)
+    outputs = evaluate(cfg['data']['images_root'],
+                       cfg['data']['val_csv'],
+                       cfg['data']['exclude_labels'],
+                       cfg['data']['val_invalid_files'],
+                       model,
+                       feature_extractor,
+                       20,
+                       device, args.output_dir,
+                       args.accuracy,
+                       wandb_log=args.wandb_log,
+                       wandb_resume=args.wandb_resume,
+                       wandb_proj=cfg['wandb']['project'],
+                       wandb_group=cfg['wandb']['group'],
+                       wandb_name=cfg['name'],
+                       wandb_id=args.wandb_id,
+                       after_train=False)
+    if args.wandb_log:
+        wandb.finish()
