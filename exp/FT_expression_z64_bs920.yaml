@@ -1,20 +1,19 @@
-name: expression-supcon-bs512
-type: contrastive
+name: FT_expression_z64_bs920
+type: finetuning
 
-supervised: true
-label: expression
+target: expression
 
 model:
-  model_ckpt: google/vit-base-patch16-224-in21k
-  z_dims: 128
+  model_ckpt: ./outputs/CL_expression_z64_bs920/model
 
 train:
-  num_epochs: 10
-  batch_size: 920
+  num_epochs: 20
+  batch_size: 1024
   learning_rate: 0.00001
   weight_decay: 0.0001
   logging_strategy: steps
-  logging_steps: 10
+  logging_steps: 1000
+  only_head: false
 
 data:
   images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
@@ -29,5 +28,5 @@ data:
     - 10
 
 wandb:
-  project: test-contrastive
-  group: test
+  project: Affectnet-vit
+  group: A100

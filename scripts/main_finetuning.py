@@ -99,13 +99,19 @@ def main(cfg: FinetuningExpConfig):
     if cfg.exp.type != 'finetuning':
         print('type must be "finetuning".')
         exit(-1)
+    validate_cfg(cfg)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(torch.cuda.device_count())
-    hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
-    output_dir = hydra_cfg['runtime']['output_dir']
 
-    print(OmegaConf.to_yaml(cfg))
-    validate_cfg(cfg)
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
+    os.makedirs(output_dir, mode=0o777)
+    print(output_dir)
+    
+    cfg_yaml = OmegaConf.to_yaml(cfg)
+    with open(os.path.join(output_dir, 'config.yaml'), 'w') as f:
+        f.write(cfg_yaml)
+
+    print(cfg_yaml)
     opt = options(cfg)
     print(opt)
     feature_extractor, model = load_model(cfg, opt)
@@ -117,7 +123,7 @@ def main(cfg: FinetuningExpConfig):
                group=cfg.exp.wandb.group, name=cfg.exp.name)
 
     trainer_args = TrainingArguments(
-        os.path.join(output_dir, cfg.exp.name),
+        os.path.join(output_dir, 'checkpoints'),
         save_strategy='epoch',
         evaluation_strategy="epoch",
         learning_rate=cfg.exp.train.learning_rate,
@@ -171,7 +177,7 @@ def main(cfg: FinetuningExpConfig):
         )
 
     trainer.train()
-    trainer.save_model(os.path.join(output_dir, '/model'))
+    trainer.save_model(os.path.join(output_dir, 'model'))
 
     # Evaluate
     print('Evaluating...')

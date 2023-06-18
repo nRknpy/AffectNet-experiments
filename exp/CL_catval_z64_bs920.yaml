@@ -1,12 +1,12 @@
-name: expression-supcon-bs512
+name: CL_catval_z64_bs920
 type: contrastive
 
 supervised: true
-label: expression
+label: categorical-valence
 
 model:
   model_ckpt: google/vit-base-patch16-224-in21k
-  z_dims: 128
+  z_dims: 64
 
 train:
   num_epochs: 10
@@ -29,5 +29,5 @@ data:
     - 10
 
 wandb:
-  project: test-contrastive
-  group: test
+  project: Affectnet-vit
+  group: A100

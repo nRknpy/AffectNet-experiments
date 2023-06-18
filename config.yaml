@@ -1,6 +1,11 @@
 hydra:
+  output_subdir: null
   job:
     chdir: false
+  run:
+    dir: ./
 
 defaults:
   - exp: default
+  - override hydra/hydra_logging: none
+  - override hydra/job_logging: none

@@ -1,14 +1,14 @@
-name: test
+name: FT_calval_z64_bs920
 type: finetuning
 
 target: expression
 
 model:
-  model_ckpt: google/vit-base-patch16-224-in21k
+  model_ckpt: ./outputs/CL_catval_z64_bs920/model
 
 train:
-  num_epochs: 10
-  batch_size: 16
+  num_epochs: 20
+  batch_size: 1024
   learning_rate: 0.00001
   weight_decay: 0.0001
   logging_strategy: steps
@@ -16,9 +16,9 @@ train:
   only_head: false
 
 data:
-  images_root: ../lab-work/Affectnet/Manually_Annotated/Manually_Annotated_Images/
-  train_csv: ../lab-work/Affectnet/training.csv
-  val_csv: ../lab-work/Affectnet/validation.csv
+  images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
+  train_csv: ../Affectnet/training.csv
+  val_csv: ../Affectnet/validation.csv
   train_invalid_files:
     [103/29a31ebf1567693f4644c8ba3476ca9a72ee07fe67a5860d98707a0a.jpg]
   val_invalid_files: []
@@ -28,5 +28,5 @@ data:
     - 10
 
 wandb:
-  project: test-finetuning
-  group: test
+  project: Affectnet-vit
+  group: A100
