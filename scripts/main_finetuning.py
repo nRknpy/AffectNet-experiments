@@ -32,7 +32,8 @@ def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: T
     ])
     val_transform = Compose([
         Resize(tuple(feature_extractor.size.values())),
-        ToTensor()
+        ToTensor(),
+        normalize,
     ])
 
     if cfg.exp.target == 'expression':
