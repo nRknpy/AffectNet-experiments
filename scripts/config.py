@@ -44,6 +44,7 @@ class WandbConfig:
 class _ContrastiveExpConfig:
     name: str = ''
     type: Literal['contrastive'] = 'contrastive'
+    cuda_devices: List[int] = field(default_factory=lambda: [0, 1, 2, 3])
     supervised: bool = True
     label: Literal['expression', 'categorical-valence',
                    'valence'] = 'expression'
@@ -57,6 +58,7 @@ class _ContrastiveExpConfig:
 class _FinetuningExpConfig:
     name: str = ''
     type: Literal['finetuning'] = 'finetuning'
+    cuda_devices: List[int] = field(default_factory=lambda: [0, 1, 2, 3])
     target: Literal['expression', 'valence',
                     'arousal', 'valence-arousal'] = 'expression'
     model: ModelConfig = ModelConfig()

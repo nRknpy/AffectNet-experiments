@@ -1,5 +1,6 @@
-name: FT_calval_z64_bs920
+name: FT_catval_z64_bs920
 type: finetuning
+cuda_devices: [0, 1, 2, 3]
 
 target: expression
 

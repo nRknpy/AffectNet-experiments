@@ -1,5 +1,6 @@
 name: default
 type: finetuning
+cuda_devices: [0, 1, 2, 3]
 
 target: expression
 

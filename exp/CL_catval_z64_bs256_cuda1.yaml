@@ -1,25 +1,26 @@
-name: contrastive
+name: CL_catval_z64_bs256_cuda1
 type: contrastive
+cuda_devices: [0]
 
 supervised: true
-label: expression
+label: categorical-valence
 
 model:
   model_ckpt: google/vit-base-patch16-224-in21k
-  z_dims: 128
+  z_dims: 64
 
 train:
-  num_epochs: 1
-  batch_size: 16
+  num_epochs: 10
+  batch_size: 256
   learning_rate: 0.00001
   weight_decay: 0.0001
   logging_strategy: steps
-  logging_steps: 1000
+  logging_steps: 10
 
 data:
-  images_root: ../lab-work/Affectnet/Manually_Annotated/Manually_Annotated_Images/
-  train_csv: ../lab-work/Affectnet/training.csv
-  val_csv: ../lab-work/Affectnet/validation.csv
+  images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
+  train_csv: ../Affectnet/training.csv
+  val_csv: ../Affectnet/validation.csv
   train_invalid_files:
     [103/29a31ebf1567693f4644c8ba3476ca9a72ee07fe67a5860d98707a0a.jpg]
   val_invalid_files: []
@@ -29,5 +30,5 @@ data:
     - 10
 
 wandb:
-  project: test-contrastive
-  group: test
+  project: Affectnet-vit
+  group: A100
