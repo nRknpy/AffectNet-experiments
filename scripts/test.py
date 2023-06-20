@@ -21,8 +21,19 @@ from visualizer import CLS_tokens, plot_tokens_category, plot_tokens_continuous
 from config import ContrastiveExpConfig, FinetuningExpConfig
 from options import Options, options
 from utils import exclude_id, try_finish_wandb
+from collections import OrderedDict
 
 from evaluate import evaluate
+
+
+def fix_model_state_dict(state_dict):
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        name = k
+        if name.startswith('module.'):
+            name = name[7:]  # remove 'module.' of dataparallel
+        new_state_dict[name] = v
+    return new_state_dict
 
 
 if __name__ == '__main__':
@@ -52,8 +63,12 @@ if __name__ == '__main__':
         cfg = cfg[list(cfg.keys())[0]]
     print(cfg)
 
-    model = ViTForImageClassification.from_pretrained(args.model)
-    feature_extractor = ViTFeatureExtractor.from_pretrained(args.model)
+    model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224-in21k",
+                                                      num_labels=64,
+                                                      problem_type='regression')
+    state_dict = torch.load(args.model)
+    model.load_state_dict(fix_model_state_dict(state_dict))
+    feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
 
     outputs = evaluate(cfg['data']['images_root'],
                        cfg['data']['val_csv'],

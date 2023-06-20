@@ -17,6 +17,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import wandb
+from PIL import Image
 
 from visualizer import CLS_tokens, plot_tokens_category, plot_tokens_continuous
 from config import ContrastiveExpConfig, FinetuningExpConfig
@@ -149,10 +150,11 @@ def evaluate(images_root,
             confusion_matrix=cm, display_labels=labels)
         fig, ax = plt.subplots(figsize=(12, 12))
         conmat = disp.plot(ax=ax)
-        if wandb_log:
-            wandb.log({'confusion_matrix.png': wandb.Image(conmat.figure_)})
         conmat.figure_.savefig(os.path.join(
             output_dir, 'confusion_matrix.png'))
+        if wandb_log:
+            im = Image.open(os.path.join(output_dir, 'confusion_matrix.png'))
+            wandb.log({'confusion_matrix.png': wandb.Image(im)})
 
     id2labels = [
         cat_id2label,
@@ -171,7 +173,8 @@ def evaluate(images_root,
                     legend], bbox_inches='tight')
         fig.add_artist(legend)
         if wandb_log:
-            wandb.log({output_names[i]: wandb.Image(fig)})
+            im = Image.open(os.path.join(output_dir, output_names[i]))
+            wandb.log({output_names[i]: wandb.Image(im)})
 
 
 if __name__ == '__main__':

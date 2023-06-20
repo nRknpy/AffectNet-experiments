@@ -185,6 +185,9 @@ def main(cfg: FinetuningExpConfig):
         )
 
     trainer.train()
+    
+    if isinstance(trainer.model, DataParallel):
+        trainer.model = trainer.model.module
     trainer.save_model(os.path.join(output_dir, 'model'))
 
     # Evaluate
@@ -193,7 +196,7 @@ def main(cfg: FinetuningExpConfig):
              cfg.exp.data.val_csv,
              cfg.exp.data.exclude_labels,
              cfg.exp.data.val_invalid_files,
-             model,
+             model.module if isinstance(model, DataParallel) else model,
              feature_extractor,
              20,
              device,
