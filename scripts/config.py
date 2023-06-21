@@ -52,6 +52,7 @@ class _ContrastiveExpConfig:
     train: TrainConfig = TrainConfig()
     data: DataConfig = DataConfig()
     wandb: WandbConfig = WandbConfig()
+    random_seed: int = 0
 
 
 @dataclass
@@ -65,6 +66,7 @@ class _FinetuningExpConfig:
     train: TrainConfig = TrainConfig()
     data: DataConfig = DataConfig()
     wandb: WandbConfig = WandbConfig()
+    random_seed: int = 0
 
 
 @dataclass

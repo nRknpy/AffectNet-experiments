@@ -1,22 +1,19 @@
-import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
-
-
-from typing import Any, Dict, Tuple
-import wandb
-from evaluate import evaluate, compute_rmse, compute_accuracy
-from trainer import WeightedLossTrainer, KDEwMSETrainer
-from dataset import AffectNetDatasetForSupConWithValence
-from model import load_model
-from options import options, Options
-from config import FinetuningExpConfig, validate_cfg
-from omegaconf import OmegaConf
-import hydra
-from torchaffectnet.collators import Collator
-from torchaffectnet import AffectNetDataset
-from torchvision.transforms import Compose, ToTensor, Resize, Normalize,RandomAffine
-from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments, EarlyStoppingCallback
+from torchvision.transforms import Compose, ToTensor, Resize, Normalize, RandomAffine
 from utils import try_finish_wandb
+from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments, EarlyStoppingCallback
+from torchaffectnet import AffectNetDataset
+from torchaffectnet.collators import Collator
+import hydra
+from omegaconf import OmegaConf
+from config import FinetuningExpConfig, validate_cfg
+from options import options, Options
+from model import load_model
+from dataset import AffectNetDatasetForSupConWithValence
+from trainer import WeightedLossTrainer, KDEwMSETrainer
+from evaluate import evaluate, compute_rmse, compute_accuracy
+import wandb
+from typing import Any, Dict, Tuple
+import os
 
 
 def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
@@ -48,7 +45,7 @@ def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: T
                                        exclude_label=cfg.exp.data.exclude_labels,
                                        invalid_files=cfg.exp.data.val_invalid_files,
                                        mode='classification')
-    
+
     elif cfg.exp.target == 'valence':
         train_dataset = AffectNetDataset(cfg.exp.data.train_csv,
                                          cfg.exp.data.images_root,
@@ -62,7 +59,7 @@ def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: T
                                        exclude_label=cfg.exp.data.exclude_labels,
                                        invalid_files=cfg.exp.data.val_invalid_files,
                                        mode='valence')
-    
+
     elif cfg.exp.target == 'arousal':
         train_dataset = AffectNetDataset(cfg.exp.data.train_csv,
                                          cfg.exp.data.images_root,
@@ -76,7 +73,7 @@ def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: T
                                        exclude_label=cfg.exp.data.exclude_labels,
                                        invalid_files=cfg.exp.data.val_invalid_files,
                                        mode='arousal')
-    
+
     elif cfg.exp.target == 'valence-arousal':
         train_dataset = AffectNetDataset(cfg.exp.data.train_csv,
                                          cfg.exp.data.images_root,
@@ -100,19 +97,21 @@ def main(cfg: FinetuningExpConfig):
         print('type must be "finetuning".')
         exit(-1)
     validate_cfg(cfg)
-    
-    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(map(str, cfg.exp.cuda_devices))
-    
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
+        map(str, cfg.exp.cuda_devices))
+
     import torch
     from torch.nn.parallel import DataParallel
-    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(torch.cuda.device_count())
 
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
+    output_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
     os.makedirs(output_dir, mode=0o777)
     print(output_dir)
-    
+
     cfg_yaml = OmegaConf.to_yaml(cfg)
     with open(os.path.join(output_dir, 'config.yaml'), 'w') as f:
         f.write(cfg_yaml)
@@ -147,7 +146,7 @@ def main(cfg: FinetuningExpConfig):
         remove_unused_columns=False,
         report_to='wandb',
     )
-    
+
     if cfg.exp.target == 'expression':
         trainer = WeightedLossTrainer(
             model,
@@ -157,7 +156,8 @@ def main(cfg: FinetuningExpConfig):
             data_collator=Collator(),
             compute_metrics=compute_accuracy,
             tokenizer=feature_extractor,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.0002)],
+            callbacks=[EarlyStoppingCallback(
+                early_stopping_patience=3, early_stopping_threshold=0.0002)],
         )
     elif cfg.exp.target == 'valence-arousal':
         trainer = KDEwMSETrainer(
@@ -169,7 +169,8 @@ def main(cfg: FinetuningExpConfig):
             data_collator=Collator(),
             compute_metrics=compute_rmse,
             tokenizer=feature_extractor,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.0002)],
+            callbacks=[EarlyStoppingCallback(
+                early_stopping_patience=3, early_stopping_threshold=0.0002)],
         )
     elif cfg.exp.target == 'arousal' or cfg.exp.target == 'valence':
         trainer = KDEwMSETrainer(
@@ -181,11 +182,12 @@ def main(cfg: FinetuningExpConfig):
             data_collator=Collator(),
             compute_metrics=compute_accuracy,
             tokenizer=feature_extractor,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.0002)],
+            callbacks=[EarlyStoppingCallback(
+                early_stopping_patience=3, early_stopping_threshold=0.0002)],
         )
 
     trainer.train()
-    
+
     if isinstance(trainer.model, DataParallel):
         trainer.model = trainer.model.module
     trainer.save_model(os.path.join(output_dir, 'model'))
@@ -201,6 +203,7 @@ def main(cfg: FinetuningExpConfig):
              20,
              device,
              output_dir,
+             cfg.exp.random_seed,
              accuracy=True if opt.problem_type == 'single_label_classification' else False,
              wandb_log=True,
              wandb_resume=False,
@@ -208,7 +211,7 @@ def main(cfg: FinetuningExpConfig):
              wandb_group=cfg.exp.wandb.group,
              wandb_name=cfg.exp.name,
              after_train=True)
-    
+
     # wandb.finish()
     try_finish_wandb()
 

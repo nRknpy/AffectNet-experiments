@@ -98,6 +98,7 @@ def evaluate(images_root,
              umap_n_neighbors,
              device,
              output_dir,
+             random_seed,
              accuracy=False,
              wandb_log=False,
              wandb_resume=False,
@@ -111,11 +112,13 @@ def evaluate(images_root,
             if wandb_id == None:
                 print('To resume wandb run, it need wandb_id.')
                 exit(-1)
-            wandb.init(project=wandb_proj, group=wandb_group, name=wandb_name, id=wandb_id, resume='must')
+            wandb.init(project=wandb_proj, group=wandb_group,
+                       name=wandb_name, id=wandb_id, resume='must')
         else:
             if not after_train:
-                wandb.init(project=wandb_proj, group=wandb_group, name=wandb_name)
-    
+                wandb.init(project=wandb_proj,
+                           group=wandb_group, name=wandb_name)
+
     model = model.to(device)
     datasets = prepare_datasets(
         images_root, csvfile, exclude_labels, invalid_files, feature_extractor)
@@ -168,7 +171,7 @@ def evaluate(images_root,
     for i, dataset in enumerate(datasets[:2]):
         tokens, targets = CLS_tokens(model, dataset, device)
         fig, legend = plot_tokens_category(
-            tokens, targets, umap_n_neighbors, id2labels[i])
+            tokens, targets, umap_n_neighbors, id2labels[i], random_seed)
         fig.savefig(os.path.join(output_dir, output_names[i]), bbox_extra_artists=[
                     legend], bbox_inches='tight')
         fig.add_artist(legend)
@@ -183,9 +186,12 @@ if __name__ == '__main__':
     parser.add_argument('model', help='model')
     parser.add_argument('output_dir', help='output directory')
     parser.add_argument('wandb_id', help='wandb run id')
-    parser.add_argument('--accuracy', action='store_true', help='evaluate accuracy')
-    parser.add_argument('--wandb_log', action='store_true', help='wandb logging')
-    parser.add_argument('--wandb_resume', action='store_true', help='resume exsisting wandb run (require wandb_id)')
+    parser.add_argument('--accuracy', action='store_true',
+                        help='evaluate accuracy')
+    parser.add_argument('--wandb_log', action='store_true',
+                        help='wandb logging')
+    parser.add_argument('--wandb_resume', action='store_true',
+                        help='resume exsisting wandb run (require wandb_id)')
 
     args = parser.parse_args()
 
@@ -215,6 +221,7 @@ if __name__ == '__main__':
                        feature_extractor,
                        20,
                        device, args.output_dir,
+                       cfg['random_seed'],
                        args.accuracy,
                        wandb_log=args.wandb_log,
                        wandb_resume=args.wandb_resume,

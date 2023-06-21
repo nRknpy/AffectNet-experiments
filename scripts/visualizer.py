@@ -28,8 +28,8 @@ def CLS_tokens(model, dataset, device):
     return torch.stack(tokens).squeeze(), torch.tensor(labels)
 
 
-def plot_tokens_category(tokens, labels, n_neighbors, id2label):
-    umap = UMAP(n_neighbors=n_neighbors)
+def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed):
+    umap = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
     zs = umap.fit_transform(tokens.numpy())
     ys = labels.numpy()
     fig = plt.figure()

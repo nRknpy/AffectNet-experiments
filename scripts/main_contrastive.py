@@ -64,19 +64,21 @@ def main(cfg: ContrastiveExpConfig):
         print('type must be "contrastive".')
         exit(-1)
     validate_cfg(cfg)
-    
-    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(map(str, cfg.exp.cuda_devices))
-    
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
+        map(str, cfg.exp.cuda_devices))
+
     import torch
     from torch.nn.parallel import DataParallel
-    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(torch.cuda.device_count())
 
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
+    output_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
     os.makedirs(output_dir, mode=0o777)
     print(output_dir)
-    
+
     cfg_yaml = OmegaConf.to_yaml(cfg)
     with open(os.path.join(output_dir, 'config.yaml'), 'w') as f:
         f.write(cfg_yaml)
@@ -117,7 +119,7 @@ def main(cfg: ContrastiveExpConfig):
     )
 
     trainer.train()
-    
+
     if isinstance(trainer.model, DataParallel):
         trainer.model = trainer.model.module
     trainer.save_model(os.path.join(output_dir, 'model'))
@@ -133,6 +135,7 @@ def main(cfg: ContrastiveExpConfig):
              20,
              device,
              output_dir,
+             cfg.exp.random_seed,
              False,
              wandb_log=True,
              wandb_resume=False,
@@ -140,7 +143,7 @@ def main(cfg: ContrastiveExpConfig):
              wandb_group=cfg.exp.wandb.group,
              wandb_name=cfg.exp.name,
              after_train=True)
-    
+
     # wandb.finish()
     try_finish_wandb()
 
