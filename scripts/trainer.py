@@ -53,13 +53,13 @@ class WeightedLossTrainer(Trainer):
         label_samples_num = torch.tensor([d[i] for i in range(len(d))])
         label_ratio = label_samples_num / len(train_dataset)
         self.weight = (1 / label_ratio).clone().to(self.args.device, torch.float32)
+        self.loss_fct = nn.CrossEntropyLoss(weight=self.weight)
     
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get('labels')
         outputs = model(**inputs)
         logits = outputs.get('logits')
-        loss_fct = nn.CrossEntropyLoss(weight=self.weight)
-        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        loss = self.loss_fct(logits.view(-1, len(self.weight)), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
 

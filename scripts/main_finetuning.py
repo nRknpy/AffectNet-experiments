@@ -106,13 +106,13 @@ def main(cfg: FinetuningExpConfig):
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(torch.cuda.device_count())
+    cfg_yaml = OmegaConf.to_yaml(cfg)
 
     output_dir = os.path.abspath(os.path.join(
         os.path.dirname(__file__), f'../outputs/{cfg.exp.name}'))
-    os.makedirs(output_dir, mode=0o777)
+    os.makedirs(output_dir)
     print(output_dir)
 
-    cfg_yaml = OmegaConf.to_yaml(cfg)
     with open(os.path.join(output_dir, 'config.yaml'), 'w') as f:
         f.write(cfg_yaml)
 
