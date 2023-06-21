@@ -40,13 +40,13 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
         normalize
     ])
 
-    if cfg.exp.label == 'expression':
+    if cfg.exp.label == 'categorical-valence':
         dataset = AffectNetDatasetForSupConWithValence(cfg.exp.data.train_csv,
                                                        cfg.exp.data.images_root,
                                                        transform=transform,
                                                        exclude_label=cfg.exp.data.exclude_labels,
                                                        invalid_files=cfg.exp.data.exclude_labels)
-    elif cfg.exp.label == 'categorical-valence':
+    elif cfg.exp.label == 'expression':
         dataset = AffectNetDatasetForSupCon(cfg.exp.data.train_csv,
                                             cfg.exp.data.images_root,
                                             transform=transform,
