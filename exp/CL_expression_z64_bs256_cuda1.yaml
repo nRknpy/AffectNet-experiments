@@ -1,6 +1,6 @@
-name: CL_expression_z64_bs920
+name: CL_catval_z64_bs256_cuda1
 type: contrastive
-cuda_devices: [0, 1, 2, 3]
+cuda_devices: [0]
 random_seed: 0
 
 supervised: true
@@ -12,11 +12,11 @@ model:
 
 train:
   num_epochs: 10
-  batch_size: 920
+  batch_size: 256
   learning_rate: 0.00001
   weight_decay: 0.0001
   logging_strategy: steps
-  logging_steps: 10
+  logging_steps: 100
 
 data:
   images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
