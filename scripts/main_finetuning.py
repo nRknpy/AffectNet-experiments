@@ -120,8 +120,8 @@ def main(cfg: FinetuningExpConfig):
     opt = options(cfg)
     print(opt)
     feature_extractor, model = load_model(cfg, opt)
-    if torch.cuda.device_count() > 1:
-        model = DataParallel(model)
+    # if torch.cuda.device_count() > 1:
+    #     model = DataParallel(model)
     train_dataset, val_dataset = prepare_dataset(cfg, opt, feature_extractor)
 
     # Train
@@ -185,7 +185,7 @@ def main(cfg: FinetuningExpConfig):
             callbacks=[EarlyStoppingCallback(
                 early_stopping_patience=3, early_stopping_threshold=0.0002)],
         )
-
+    
     trainer.train()
 
     if isinstance(trainer.model, DataParallel):

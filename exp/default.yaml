@@ -18,9 +18,9 @@ train:
   only_head: false
 
 data:
-  images_root: ../lab-work/Affectnet/Manually_Annotated/Manually_Annotated_Images/
-  train_csv: ../lab-work/Affectnet/training.csv
-  val_csv: ../lab-work/Affectnet/validation.csv
+  images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
+  train_csv: ../Affectnet/training.csv
+  val_csv: ../Affectnet/validation.csv
   train_invalid_files:
     [103/29a31ebf1567693f4644c8ba3476ca9a72ee07fe67a5860d98707a0a.jpg]
   val_invalid_files: []

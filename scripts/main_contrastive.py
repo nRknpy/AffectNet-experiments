@@ -19,7 +19,8 @@ from torchvision.transforms import (Compose,
                                     RandomApply,
                                     ColorJitter,
                                     RandomGrayscale,
-                                    ToTensor)
+                                    ToTensor,
+                                    RandomAffine)
 from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments
 from utils import try_finish_wandb
 
@@ -28,14 +29,20 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
     normalize = Normalize(mean=feature_extractor.image_mean,
                           std=feature_extractor.image_std)
 
-    transform = Compose([
+    transform1 = Compose([
+        RandomAffine(30),
+        Resize(tuple(feature_extractor.size.values())),
+        ToTensor(),
+        normalize,
+    ])
+
+    transform2 = Compose([
         RandomResizedCrop(size=tuple(
             feature_extractor.size.values()), scale=(0.2, 1.)),
         RandomHorizontalFlip(),
         RandomApply([
             ColorJitter(0.4, 0.4, 0.4, 0.1)
         ], p=0.8),
-        RandomGrayscale(p=0.2),
         ToTensor(),
         normalize
     ])
@@ -43,13 +50,15 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
     if cfg.exp.label == 'categorical-valence':
         dataset = AffectNetDatasetForSupConWithValence(cfg.exp.data.train_csv,
                                                        cfg.exp.data.images_root,
-                                                       transform=transform,
+                                                       transform1=transform1,
+                                                       transform2=transform2,
                                                        exclude_label=cfg.exp.data.exclude_labels,
                                                        invalid_files=cfg.exp.data.exclude_labels)
     elif cfg.exp.label == 'expression':
         dataset = AffectNetDatasetForSupCon(cfg.exp.data.train_csv,
                                             cfg.exp.data.images_root,
-                                            transform=transform,
+                                            transform1=transform1,
+                                            transform2=transform2,
                                             exclude_label=cfg.exp.data.exclude_labels,
                                             invalid_files=cfg.exp.data.exclude_labels)
     elif cfg.exp.label == 'valence':
@@ -87,8 +96,8 @@ def main(cfg: ContrastiveExpConfig):
     opt = options(cfg)
     print(opt)
     feature_extractor, model = load_model(cfg, opt)
-    if torch.cuda.device_count() > 1:
-        model = DataParallel(model)
+    # if torch.cuda.device_count() > 1:
+    #     model = DataParallel(model)
     train_dataset = prepare_dataset(cfg, opt, feature_extractor)
 
     # Train
