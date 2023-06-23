@@ -44,7 +44,8 @@ def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], 
                                                                images_root,
                                                                exclude_label=exclude_labels,
                                                                invalid_files=invalid_files,
-                                                               transform=transform)
+                                                               transform1=transform,
+                                                               transform2=transform)
     valence_dataset = AffectNetDataset(csvfile,
                                        images_root,
                                        exclude_label=exclude_labels,

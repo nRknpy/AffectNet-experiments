@@ -1,22 +1,22 @@
-name: CL_catval_z64_bs256_cuda1
+name: CL_catval_z256_bs920
 type: contrastive
-cuda_devices: [0]
+cuda_devices: [0, 1, 2, 3]
 random_seed: 0
 
 supervised: true
-label: expression
+label: categorical-valence
 
 model:
   model_ckpt: google/vit-base-patch16-224-in21k
-  z_dims: 64
+  z_dims: 256
 
 train:
   num_epochs: 8
-  batch_size: 256
-  learning_rate: 0.0001
+  batch_size: 920
+  learning_rate: 0.0002
   weight_decay: 0.001
   logging_strategy: steps
-  logging_steps: 100
+  logging_steps: 10
 
 data:
   images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
