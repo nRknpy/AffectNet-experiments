@@ -16,7 +16,7 @@ train:
   learning_rate: 0.0002
   weight_decay: 0.001
   logging_strategy: steps
-  logging_steps: 100
+  logging_steps: 50
 
 data:
   images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
