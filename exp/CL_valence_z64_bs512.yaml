@@ -1,10 +1,10 @@
-name: CL_catval_z64_bs512
+name: CL_valence_z64_bs512
 type: contrastive
 cuda_devices: [0, 1, 2, 3]
 random_seed: 0
 
 supervised: true
-label: categorical-valence
+label: valence
 
 model:
   model_ckpt: google/vit-base-patch16-224-in21k
