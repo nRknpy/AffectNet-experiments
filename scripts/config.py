@@ -19,6 +19,7 @@ class TrainConfig:
     batch_size: int = 32
     learning_rate: float = 1e-5
     weight_decay: float = 1e-4
+    warmup_steps: int = 0
     logging_strategy: Literal['steps', 'epoch'] = 'steps'
     logging_steps: int | None = 1000
     only_head: bool | None = False
@@ -47,7 +48,7 @@ class _ContrastiveExpConfig:
     cuda_devices: List[int] = field(default_factory=lambda: [0, 1, 2, 3])
     supervised: bool = True
     label: Literal['expression', 'categorical-valence',
-                   'valence'] = 'expression'
+                   'valence', 'arousal', 'valence-arousal'] = 'expression'
     model: ContrastiveModelConfig = ContrastiveModelConfig()
     train: TrainConfig = TrainConfig()
     data: DataConfig = DataConfig()
@@ -79,7 +80,7 @@ class FinetuningExpConfig:
     exp: _FinetuningExpConfig = _FinetuningExpConfig()
 
 
-cfg_label = ('expression', 'categorical-valence', 'valence')
+cfg_label = ('expression', 'categorical-valence', 'valence', 'arousal', 'valence-arousal')
 cfg_target = ('expression', 'valence', 'arousal', 'valence-arousal')
 
 

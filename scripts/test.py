@@ -10,7 +10,7 @@ from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
 from torchaffectnet.collators import Collator
 from torchaffectnet.const import ID2EXPRESSION
-from dataset import AffectNetDatasetForSupConWithValence
+from dataset import AffectNetDatasetForSupConWithCategoricalValence
 from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer, TrainingArguments
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay

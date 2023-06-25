@@ -2,8 +2,11 @@ import os
 from typing import Any, Dict, Tuple
 import wandb
 from evaluate import evaluate
-from trainer import SupConTrainer
-from dataset import AffectNetDatasetForSupConWithValence
+from trainer import SupConTrainer, ContinuousSupConTrainer
+from dataset import (AffectNetDatasetForSupConWithCategoricalValence,
+                     AffectNetDatasetForSupConWithValence,
+                     AffectNetDatasetForSupConWithArousal,
+                     AffectNetDatasetForSupConWithValenceArousal)
 from model import load_model
 from options import options, Options
 from config import ContrastiveExpConfig, validate_cfg
@@ -48,12 +51,12 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
     ])
 
     if cfg.exp.label == 'categorical-valence':
-        dataset = AffectNetDatasetForSupConWithValence(cfg.exp.data.train_csv,
-                                                       cfg.exp.data.images_root,
-                                                       transform1=transform1,
-                                                       transform2=transform2,
-                                                       exclude_label=cfg.exp.data.exclude_labels,
-                                                       invalid_files=cfg.exp.data.exclude_labels)
+        dataset = AffectNetDatasetForSupConWithCategoricalValence(cfg.exp.data.train_csv,
+                                                                  cfg.exp.data.images_root,
+                                                                  transform1=transform1,
+                                                                  transform2=transform2,
+                                                                  exclude_label=cfg.exp.data.exclude_labels,
+                                                                  invalid_files=cfg.exp.data.exclude_labels)
     elif cfg.exp.label == 'expression':
         dataset = AffectNetDatasetForSupCon(cfg.exp.data.train_csv,
                                             cfg.exp.data.images_root,
@@ -62,8 +65,26 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                             exclude_label=cfg.exp.data.exclude_labels,
                                             invalid_files=cfg.exp.data.exclude_labels)
     elif cfg.exp.label == 'valence':
-        print('CL with continuous valence is not implemented.')
-        exit(-1)
+        dataset = AffectNetDatasetForSupConWithValence(cfg.exp.data.train_csv,
+                                                       cfg.exp.data.images_root,
+                                                       transform1=transform1,
+                                                       transform2=transform2,
+                                                       exclude_label=cfg.exp.data.exclude_labels,
+                                                       invalid_files=cfg.exp.data.exclude_labels)
+    elif cfg.exp.label == 'arousal':
+        dataset = AffectNetDatasetForSupConWithArousal(cfg.exp.data.train_csv,
+                                                       cfg.exp.data.images_root,
+                                                       transform1=transform1,
+                                                       transform2=transform2,
+                                                       exclude_label=cfg.exp.data.exclude_labels,
+                                                       invalid_files=cfg.exp.data.exclude_labels)
+    elif cfg.exp.label == 'valence-arousal':
+        dataset = AffectNetDatasetForSupConWithValenceArousal(cfg.exp.data.train_csv,
+                                                              cfg.exp.data.images_root,
+                                                              transform1=transform1,
+                                                              transform2=transform2,
+                                                              exclude_label=cfg.exp.data.exclude_labels,
+                                                              invalid_files=cfg.exp.data.exclude_labels)
     return dataset
 
 
@@ -113,19 +134,29 @@ def main(cfg: ContrastiveExpConfig):
             cfg.exp.train.batch_size / torch.cuda.device_count()),
         num_train_epochs=cfg.exp.train.num_epochs,
         weight_decay=cfg.exp.train.weight_decay,
+        warmup_steps=cfg.exp.train.warmup_steps,
         logging_strategy=cfg.exp.train.logging_strategy,
         logging_steps=cfg.exp.train.logging_steps,
         remove_unused_columns=False,
         report_to='wandb',
     )
 
-    trainer = SupConTrainer(
-        model,
-        trainer_args,
-        train_dataset=train_dataset,
-        data_collator=ContrastiveCollator(return_labels=opt.return_labels),
-        tokenizer=feature_extractor,
-    )
+    if cfg.exp.label == 'expression' or cfg.exp.label == 'categorical-valence':
+        trainer = SupConTrainer(
+            model,
+            trainer_args,
+            train_dataset=train_dataset,
+            data_collator=ContrastiveCollator(return_labels=opt.return_labels),
+            tokenizer=feature_extractor,
+        )
+    else:
+        trainer = ContinuousSupConTrainer(
+            model,
+            trainer_args,
+            train_dataset=train_dataset,
+            data_collator=ContrastiveCollator(return_labels=opt.return_labels),
+            tokenizer=feature_extractor,
+        )
 
     trainer.train()
 

@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 from config import FinetuningExpConfig, validate_cfg
 from options import options, Options
 from model import load_model
-from dataset import AffectNetDatasetForSupConWithValence
+from dataset import AffectNetDatasetForSupConWithCategoricalValence
 from trainer import WeightedLossTrainer, KDEwMSETrainer
 from evaluate import evaluate, compute_rmse, compute_accuracy
 import wandb
@@ -139,6 +139,7 @@ def main(cfg: FinetuningExpConfig):
         per_device_eval_batch_size=16,
         num_train_epochs=cfg.exp.train.num_epochs,
         weight_decay=cfg.exp.train.weight_decay,
+        warmup_steps=cfg.exp.train.warmup_steps,
         load_best_model_at_end=True,
         metric_for_best_model='rmse' if opt.problem_type == 'regression' else 'accuracy',
         logging_strategy=cfg.exp.train.logging_strategy,

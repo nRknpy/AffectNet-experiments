@@ -10,7 +10,7 @@ from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
 from torchaffectnet.collators import Collator
 from torchaffectnet.const import ID2EXPRESSION
-from dataset import AffectNetDatasetForSupConWithValence
+from dataset import AffectNetDatasetForSupConWithCategoricalValence
 from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer, TrainingArguments
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -40,7 +40,7 @@ def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], 
                                         invalid_files=invalid_files,
                                         transform=transform,
                                         mode='classification')
-    cat_valence_dataset = AffectNetDatasetForSupConWithValence(csvfile,
+    cat_valence_dataset = AffectNetDatasetForSupConWithCategoricalValence(csvfile,
                                                                images_root,
                                                                exclude_label=exclude_labels,
                                                                invalid_files=invalid_files,

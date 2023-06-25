@@ -1,4 +1,4 @@
-name: FT_catval_z256_bs512
+name: FT_catval_z64_bs512
 type: finetuning
 cuda_devices: [0, 1, 2, 3]
 random_seed: 0
@@ -6,13 +6,14 @@ random_seed: 0
 target: expression
 
 model:
-  model_ckpt: ./outputs/CL_catval_z256_bs512/model
+  model_ckpt: ./outputs/CL_catval_z64_bs512/model
 
 train:
   num_epochs: 10
   batch_size: 512
-  learning_rate: 0.0001
-  weight_decay: 0.001
+  learning_rate: 0.00005
+  weight_decay: 0.0001
+  warmup_steps: 0
   logging_strategy: steps
   logging_steps: 50
   only_head: false
