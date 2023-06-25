@@ -57,7 +57,7 @@ class ContinuousSupConLoss(nn.Module):
         if len(features.shape) > 3:
             features = features.view(features.shape[0], features.shape[1], -1)
         
-        if len(labels.shape) != 1:
+        if len(labels.shape) != 2:
             labels = labels.view(labels.shape[0], -1)
         
         batch_size = features.shape[0]
@@ -104,9 +104,5 @@ class ContinuousSupConLoss(nn.Module):
         # loss
         loss = - mean_log_prob
         loss = loss.view(anchor_count, batch_size).mean()
-        
-        print(logits_log_prob)
-        print(weights_prob)
-        print(mean_log_prob)
         
         return loss
