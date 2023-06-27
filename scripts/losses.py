@@ -21,21 +21,23 @@ class ContinuousSupConLoss(nn.Module):
         if not self.l_similarity_mode in ('dot', 'l2norm'):
             raise ValueError('Unknown label similarity mode: {}'.format(self.l_similarity_mode))
     
-    def dot_similarity(self, anchor, contrast, temp):
+    def dot_similarity(self, anchor, contrast, temp, submax=True):
         anchor_dot_contrast = torch.div(
             torch.matmul(anchor, contrast.T),
             temp)
-        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
-        logits = anchor_dot_contrast - logits_max.detach()
-        return logits
+        if submax:
+            _max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+            anchor_dot_contrast = anchor_dot_contrast - _max.detach()
+        return anchor_dot_contrast
     
-    def l2norm_similarity(self, anchor, contrast, temp):
+    def l2norm_similarity(self, anchor, contrast, temp, submax=True):
         dist_anchor_contrast = -torch.div(
             torch.cdist(anchor, contrast, p=2),
             temp
         )
-        # logits_max, _ = torch.max(dist_anchor_contrast, dim=1, keepdim=True)
-        # logits = dist_anchor_contrast - logits_max.detach()
+        if submax:
+            _max, _ = torch.max(dist_anchor_contrast, dim=1, keepdim=True)
+            dist_anchor_contrast = dist_anchor_contrast - _max.detach()
         return dist_anchor_contrast
     
     def forward(self, features, labels):
@@ -43,8 +45,6 @@ class ContinuousSupConLoss(nn.Module):
         Args:
             features: hidden vector of shape [bsz, n_views, ...].
             labels: ground truth of shape [bsz, label_dim, ...].
-            mask: contrastive mask of shape [bsz, bsz], mask_{i,j}=1 if sample j
-                has the same class as sample i. Can be asymmetric.
         Returns:
             A loss scalar.
         """
@@ -98,7 +98,6 @@ class ContinuousSupConLoss(nn.Module):
         
         log_prob = torch.mul(weights_prob, logits_log_prob)
         
-        # compute mean of log-likelihood over positive
         mean_log_prob = log_prob.sum(1) / i_mask.sum(1)
         
         # loss

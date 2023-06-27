@@ -1,4 +1,4 @@
-python scripts/main_finetuning.py exp=_FT_expression_z64_bs512
+# python scripts/main_finetuning.py exp=_FT_expression_z64_bs512
 python scripts/main_contrastive.py exp=CL_valence_z64_bs512
 python scripts/main_finetuning.py exp=FT_valence_z64_bs512
 python scripts/main_finetuning.py exp=FT_vanilla
