@@ -1,0 +1,2 @@
+python scripts/main_contrastive.py exp=CL_landmark_z64_bs512
+python scripts/main_finetuning.py exp=FT_landmark_z64_bs512

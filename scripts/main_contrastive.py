@@ -6,7 +6,8 @@ from trainer import SupConTrainer, ContinuousSupConTrainer
 from dataset import (AffectNetDatasetForSupConWithCategoricalValence,
                      AffectNetDatasetForSupConWithValence,
                      AffectNetDatasetForSupConWithArousal,
-                     AffectNetDatasetForSupConWithValenceArousal)
+                     AffectNetDatasetForSupConWithValenceArousal,
+                     AffectNetDatasetForSupConWithLandmark)
 from model import load_model
 from options import options, Options
 from config import ContrastiveExpConfig, validate_cfg
@@ -85,6 +86,13 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                                               transform2=transform2,
                                                               exclude_label=cfg.exp.data.exclude_labels,
                                                               invalid_files=cfg.exp.data.exclude_labels)
+    elif cfg.exp.label == 'landmark':
+        dataset = AffectNetDatasetForSupConWithLandmark(cfg.exp.data.train_csv,
+                                                        cfg.exp.data.images_root,
+                                                        transform1=transform1,
+                                                        transform2=transform2,
+                                                        exclude_label=cfg.exp.data.exclude_labels,
+                                                        invalid_files=cfg.exp.data.exclude_labels)
     return dataset
 
 
