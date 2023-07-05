@@ -1,0 +1,5 @@
+python scripts/main_finetuning.py exp=FT_head_expression_z64_bs512
+python scripts/main_finetuning.py exp=FT_head_valence_z64_bs512
+python scripts/main_finetuning.py exp=FT_head_valaro_z64_bs512
+python scripts/main_finetuning.py exp=FT_head_catval_z64_bs512
+python scripts/main_finetuning.py exp=FT_head_landmark_z64_bs512
