@@ -9,6 +9,7 @@ class ModelConfig:
     model_ckpt: str = 'google/vit-base-patch16-224-in21k'
 
 
+@dataclass
 class ContrastiveModelConfig(ModelConfig):
     z_dims: int = 128
 
@@ -80,7 +81,8 @@ class FinetuningExpConfig:
     exp: _FinetuningExpConfig = _FinetuningExpConfig()
 
 
-cfg_label = ('expression', 'categorical-valence', 'valence', 'arousal', 'valence-arousal', 'landmark')
+cfg_label = ('expression', 'categorical-valence', 'valence',
+             'arousal', 'valence-arousal', 'landmark')
 cfg_target = ('expression', 'valence', 'arousal', 'valence-arousal')
 
 

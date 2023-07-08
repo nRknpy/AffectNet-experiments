@@ -1,5 +1,7 @@
 from typing import List, Tuple, Dict, Any
+from dataclasses import dataclass
 import torch
+from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 import os
@@ -10,7 +12,7 @@ from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 from torchaffectnet import AffectNetDatasetForSupCon, AffectNetDataset
 from torchaffectnet.collators import Collator
 from torchaffectnet.const import ID2EXPRESSION
-from dataset import AffectNetDatasetForSupConWithCategoricalValence
+from dataset import AffectNetDatasetForSupConWithCategoricalValence, categorical_valence_id2label
 from transformers import ViTFeatureExtractor, ViTForImageClassification, Trainer, TrainingArguments
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -19,13 +21,53 @@ import matplotlib.pyplot as plt
 import wandb
 from PIL import Image
 
-from visualizer import CLS_tokens, plot_tokens_category, plot_tokens_continuous
+from visualizer import CLS_tokens, hidden_tokens, head_outputs, plot_tokens_category, plot_tokens_continuous, plot_hidden_tokens_category
 from config import ContrastiveExpConfig, FinetuningExpConfig
 from options import Options, options
 from utils import exclude_id, try_finish_wandb
 
 
-def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], invalid_files: List[str], feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
+@dataclass
+class VisualizerFunctions:
+    tokens: Any
+    plotter: Any
+
+
+@dataclass
+class EvaluationMaterial:
+    dataset: Dataset
+    output_name: str
+    visualizer: VisualizerFunctions
+    id2label: Dict[int, str]
+
+
+plot_output_names = [
+    'emotion',
+    'categorical_valence',
+    'valence',
+    'arousal',
+    'hidden_layers',
+    'head_emotion',
+    'head_categorical_valence',
+    'head_valence',
+    'head_arousal',
+]
+
+
+visualizers = [
+    VisualizerFunctions(CLS_tokens, plot_tokens_category),
+    VisualizerFunctions(CLS_tokens, plot_tokens_category),
+    VisualizerFunctions(CLS_tokens, plot_tokens_continuous),
+    VisualizerFunctions(CLS_tokens, plot_tokens_continuous),
+    VisualizerFunctions(hidden_tokens, plot_hidden_tokens_category),
+    VisualizerFunctions(head_outputs, plot_tokens_category),
+    VisualizerFunctions(head_outputs, plot_tokens_category),
+    VisualizerFunctions(head_outputs, plot_tokens_continuous),
+    VisualizerFunctions(head_outputs, plot_tokens_continuous),
+]
+
+
+def prepare_materials(images_root: str, csvfile: str, exclude_labels: List[int], invalid_files: List[str], feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor) -> List[EvaluationMaterial]:
     normalize = Normalize(mean=feature_extractor.image_mean,
                           std=feature_extractor.image_std)
     transform = Compose([
@@ -41,11 +83,11 @@ def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], 
                                         transform=transform,
                                         mode='classification')
     cat_valence_dataset = AffectNetDatasetForSupConWithCategoricalValence(csvfile,
-                                                               images_root,
-                                                               exclude_label=exclude_labels,
-                                                               invalid_files=invalid_files,
-                                                               transform1=transform,
-                                                               transform2=transform)
+                                                                          images_root,
+                                                                          exclude_label=exclude_labels,
+                                                                          invalid_files=invalid_files,
+                                                                          transform1=transform,
+                                                                          transform2=transform)
     valence_dataset = AffectNetDataset(csvfile,
                                        images_root,
                                        exclude_label=exclude_labels,
@@ -58,21 +100,44 @@ def prepare_datasets(images_root: str, csvfile: str, exclude_labels: List[int], 
                                        invalid_files=invalid_files,
                                        transform=transform,
                                        mode='arousal')
+    hidden_layer_dataset = AffectNetDataset(csvfile,
+                                            images_root,
+                                            transform=transform,
+                                            exclude_label=exclude_labels,
+                                            invalid_files=invalid_files,
+                                            mode='classification')
 
-    return [
+    datasets = [
+        category_dataset,
+        cat_valence_dataset,
+        valence_dataset,
+        arousal_dataset,
+        hidden_layer_dataset,
         category_dataset,
         cat_valence_dataset,
         valence_dataset,
         arousal_dataset,
     ]
 
+    expression_id2label, _ = exclude_id(exclude_labels)
 
-output_names = [
-    'emotion.png',
-    'categorical_valence.png',
-    'valence.png',
-    'arousal.png'
-]
+    id2labels = [
+        expression_id2label,
+        categorical_valence_id2label,
+        None,
+        None,
+        expression_id2label,
+        expression_id2label,
+        categorical_valence_id2label,
+        None,
+        None,
+    ]
+
+    materials = []
+    for output_name, dataset, visualizer, id2label in zip(plot_output_names, datasets, visualizers, id2labels):
+        materials.append(EvaluationMaterial(
+            dataset, output_name, visualizer, id2label))
+    return materials
 
 
 acc_met = load_metric("accuracy")
@@ -121,10 +186,8 @@ def evaluate(images_root,
                            group=wandb_group, name=wandb_name)
 
     model = model.to(device)
-    datasets = prepare_datasets(
+    materials = prepare_materials(
         images_root, csvfile, exclude_labels, invalid_files, feature_extractor)
-
-    cat_id2label, cat_label2id = exclude_id(exclude_labels)
 
     if accuracy:
         args = TrainingArguments(
@@ -140,7 +203,7 @@ def evaluate(images_root,
             compute_metrics=compute_accuracy,
             tokenizer=feature_extractor,
         )
-        test_outputs = trainer.predict(datasets[0])
+        test_outputs = trainer.predict(materials[0].dataset)
         print('='*30)
         print(test_outputs.metrics)
         print('='*30)
@@ -148,6 +211,7 @@ def evaluate(images_root,
         y_true = test_outputs.label_ids
         y_pred = test_outputs.predictions.argmax(1)
 
+        _, cat_label2id = exclude_id(exclude_labels)
         labels = list(cat_label2id.keys())
         cm = confusion_matrix(y_true, y_pred, normalize='true')
         disp = ConfusionMatrixDisplay(
@@ -155,30 +219,43 @@ def evaluate(images_root,
         fig, ax = plt.subplots(figsize=(12, 12))
         conmat = disp.plot(ax=ax)
         conmat.figure_.savefig(os.path.join(
+            output_dir, 'confusion_matrix.svg'))
+        conmat.figure_.savefig(os.path.join(
             output_dir, 'confusion_matrix.png'))
         if wandb_log:
             im = Image.open(os.path.join(output_dir, 'confusion_matrix.png'))
             wandb.log({'confusion_matrix.png': wandb.Image(im)})
 
-    id2labels = [
-        cat_id2label,
-        {
-            0: 'valence < -0.5',
-            1: '-0.5 <= valence <= 0.5',
-            2: '0.5 < valence',
-        }
-    ]
-
-    for i, dataset in enumerate(datasets[:2]):
-        tokens, targets = CLS_tokens(model, dataset, device)
-        fig, legend = plot_tokens_category(
-            tokens, targets, umap_n_neighbors, id2labels[i], random_seed)
-        fig.savefig(os.path.join(output_dir, output_names[i]), bbox_extra_artists=[
+    for material in materials:
+        tokens, targets = material.visualizer.tokens(
+            model, material.dataset, device)
+        if material.id2label == None:
+            fig = material.visualizer.plotter(
+                tokens, targets, umap_n_neighbors, random_seed)
+            fig.savefig(os.path.join(
+                output_dir, material.output_name+'.svg'), bbox_inches='tight')
+            fig.savefig(os.path.join(
+                output_dir, material.output_name+'.png'), bbox_inches='tight')
+        else:
+            fig = material.visualizer.plotter(
+                tokens, targets, umap_n_neighbors, material.id2label, random_seed)
+            legend = None
+            if isinstance(fig, tuple):
+                fig, legend = fig
+            if legend == None:
+                fig.savefig(os.path.join(
+                    output_dir, material.output_name+'.svg'), bbox_inches='tight')
+                fig.savefig(os.path.join(
+                    output_dir, material.output_name+'.png'), bbox_inches='tight')
+            else:
+                fig.savefig(os.path.join(output_dir, material.output_name+'.svg'), bbox_extra_artists=[
                     legend], bbox_inches='tight')
-        fig.add_artist(legend)
+                fig.savefig(os.path.join(output_dir, material.output_name+'.png'), bbox_extra_artists=[
+                    legend], bbox_inches='tight')
         if wandb_log:
-            im = Image.open(os.path.join(output_dir, output_names[i]))
-            wandb.log({output_names[i]: wandb.Image(im)})
+            im = Image.open(os.path.join(
+                output_dir, material.output_name+'.png'))
+            wandb.log({material.output_name+'.png': wandb.Image(im)})
 
 
 if __name__ == '__main__':
