@@ -51,6 +51,16 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
         normalize
     ])
 
+    if opt.return_labels == False:
+        dataset = AffectNetDatasetForSupCon(cfg.exp.data.train_csv,
+                                            cfg.exp.data.images_root,
+                                            transform1=transform1,
+                                            transform2=transform2,
+                                            exclude_label=cfg.exp.data.exclude_labels,
+                                            invalid_files=cfg.exp.data.exclude_labels,
+                                            return_labels=opt.return_labels)
+        return dataset
+
     if cfg.exp.label == 'categorical-valence':
         dataset = AffectNetDatasetForSupConWithCategoricalValence(cfg.exp.data.train_csv,
                                                                   cfg.exp.data.images_root,
@@ -149,7 +159,7 @@ def main(cfg: ContrastiveExpConfig):
         report_to='wandb',
     )
 
-    if cfg.exp.label == 'expression' or cfg.exp.label == 'categorical-valence':
+    if cfg.exp.label == 'expression' or cfg.exp.label == 'categorical-valence' or opt.return_labels == False:
         trainer = SupConTrainer(
             model,
             trainer_args,

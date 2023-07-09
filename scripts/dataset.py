@@ -3,6 +3,13 @@ from torchaffectnet.datasets import AffectNetDatasetForSupCon
 from typing import List, Tuple
 
 
+categorical_valence_id2label = {
+    0: 'valence < -0.5',
+    1: '-0.5 <= valence <= 0.5',
+    2: '0.5 < valence',
+}
+
+
 class AffectNetDatasetForSupConWithCategoricalValence(AffectNetDatasetForSupCon):
     def labeling(self, idx):
         target = torch.tensor(self.df['valence'][idx])
@@ -31,7 +38,8 @@ class AffectNetDatasetForSupConWithValenceArousal(AffectNetDatasetForSupCon):
 
 class AffectNetDatasetForSupConWithLandmark(AffectNetDatasetForSupCon):
     def __init__(self, csvfile: str, root: str, transform1, transform2, exclude_label: Tuple[int] = ..., return_labels: bool = True, crop: bool = False, invalid_files: List[str] = None):
-        super().__init__(csvfile, root, transform1, transform2, exclude_label, return_labels, crop, invalid_files)
+        super().__init__(csvfile, root, transform1, transform2,
+                         exclude_label, return_labels, crop, invalid_files)
         landmarks = self.df['facial_landmarks']
         face_x = self.df['face_x']
         face_y = self.df['face_y']
@@ -50,7 +58,7 @@ class AffectNetDatasetForSupConWithLandmark(AffectNetDatasetForSupCon):
             y_coordinates.append(y)
         self.x_landmarks = torch.stack(x_coordinates)
         self.y_landmarks = torch.stack(y_coordinates)
-    
+
     def labeling(self, idx):
         x_landmark = self.x_landmarks[idx]
         y_landmark = self.y_landmarks[idx]

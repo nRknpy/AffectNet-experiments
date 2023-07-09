@@ -1,7 +1,11 @@
+from typing import Literal
+
 import torch
+import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from umap.umap_ import UMAP
+from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
@@ -58,9 +62,13 @@ def hidden_tokens(model, dataset, device):
     return tokens_list, torch.tensor(labels)
 
 
-def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed):
-    umap = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
-    zs = umap.fit_transform(tokens.numpy())
+def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds'] = 'umap'):
+    if method == 'umap':
+        compress = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
+    elif method == 'mds':
+        compress = MDS(n_components=2, random_state=random_seed, n_init=2)
+        tokens = F.normalize(tokens, dim=0)
+    zs = compress.fit_transform(tokens.numpy())
     ys = labels.numpy()
     fig = plt.figure()
     ax = fig.add_subplot()
@@ -88,9 +96,13 @@ def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed):
     return fig, legend
 
 
-def plot_tokens_continuous(tokens, targets, n_neighbors, random_seed):
-    umap = UMAP(n_neighbors=n_neighbors)
-    zs = np.array(umap.fit_transform(tokens.numpy()))
+def plot_tokens_continuous(tokens, targets, n_neighbors, random_seed, method: Literal['umap', 'mds'] = 'umap'):
+    if method == 'umap':
+        compress = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
+    elif method == 'mds':
+        compress = MDS(n_components=2, random_state=random_seed, n_init=2)
+        tokens = F.normalize(tokens, dim=0)
+    zs = np.array(compress.fit_transform(tokens.numpy()))
     x = zs[:, 0]
     y = zs[:, 1]
     z = targets.numpy()
@@ -112,7 +124,7 @@ def plot_tokens_continuous(tokens, targets, n_neighbors, random_seed):
     return fig
 
 
-def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, random_seed):
+def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds'] = 'umap'):
     ys = labels.numpy()
     vmax = len(set(ys))
     fig = plt.figure(figsize=(100, 8))
@@ -124,8 +136,12 @@ def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, rand
         ax.set_title(f'{i+1}', fontsize=100)
         ax.axes.xaxis.set_ticks([])
         ax.axes.yaxis.set_ticks([])
-        umap = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
-        zs = umap.fit_transform(tokens_list[i].numpy())
+        if method == 'umap':
+            compress = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
+        elif method == 'mds':
+            compress = MDS(n_components=2, random_state=random_seed, n_init=2)
+            tokens_list[i] = F.normalize(tokens_list[i], dim=0)
+        zs = compress.fit_transform(tokens_list[i].numpy())
         label2point = {}
         for x, y in zip(zs, ys):
             mp = ax.scatter(x[0], x[1],

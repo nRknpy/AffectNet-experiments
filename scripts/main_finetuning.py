@@ -158,7 +158,7 @@ def main(cfg: FinetuningExpConfig):
             compute_metrics=compute_accuracy,
             tokenizer=feature_extractor,
             callbacks=[EarlyStoppingCallback(
-                early_stopping_patience=3, early_stopping_threshold=0.0002)],
+                early_stopping_patience=2)],
         )
     elif cfg.exp.target == 'valence-arousal':
         trainer = KDEwMSETrainer(
