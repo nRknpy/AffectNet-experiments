@@ -172,7 +172,8 @@ def evaluate(images_root,
              wandb_group=None,
              wandb_name=None,
              wandb_id=None,
-             after_train=False):
+             after_train=False,
+             method='umap'):
     if wandb_log:
         if wandb_resume:
             if wandb_id == None:
@@ -231,31 +232,32 @@ def evaluate(images_root,
             model, material.dataset, device)
         if material.id2label == None:
             fig = material.visualizer.plotter(
-                tokens, targets, umap_n_neighbors, random_seed)
+                tokens, targets, umap_n_neighbors, random_seed, method=method)
             fig.savefig(os.path.join(
-                output_dir, material.output_name+'.svg'), bbox_inches='tight')
+                output_dir, material.output_name+f'_{method}'+'.svg'), bbox_inches='tight')
             fig.savefig(os.path.join(
-                output_dir, material.output_name+'.png'), bbox_inches='tight')
+                output_dir, material.output_name+f'_{method}'+'.png'), bbox_inches='tight')
         else:
             fig = material.visualizer.plotter(
-                tokens, targets, umap_n_neighbors, material.id2label, random_seed)
+                tokens, targets, umap_n_neighbors, material.id2label, random_seed, method=method)
             legend = None
             if isinstance(fig, tuple):
                 fig, legend = fig
             if legend == None:
                 fig.savefig(os.path.join(
-                    output_dir, material.output_name+'.svg'), bbox_inches='tight')
+                    output_dir, material.output_name+f'_{method}'+'.svg'), bbox_inches='tight')
                 fig.savefig(os.path.join(
-                    output_dir, material.output_name+'.png'), bbox_inches='tight')
+                    output_dir, material.output_name+f'_{method}'+'.png'), bbox_inches='tight')
             else:
-                fig.savefig(os.path.join(output_dir, material.output_name+'.svg'), bbox_extra_artists=[
+                fig.savefig(os.path.join(output_dir, material.output_name+f'_{method}'+'.svg'), bbox_extra_artists=[
                     legend], bbox_inches='tight')
-                fig.savefig(os.path.join(output_dir, material.output_name+'.png'), bbox_extra_artists=[
+                fig.savefig(os.path.join(output_dir, material.output_name+f'_{method}'+'.png'), bbox_extra_artists=[
                     legend], bbox_inches='tight')
         if wandb_log:
             im = Image.open(os.path.join(
-                output_dir, material.output_name+'.png'))
-            wandb.log({material.output_name+'.png': wandb.Image(im)})
+                output_dir, material.output_name+f'_{method}'+'.png'))
+            wandb.log({material.output_name+f'_{method}' +
+                      '.png': wandb.Image(im)})
 
 
 if __name__ == '__main__':
@@ -307,7 +309,8 @@ if __name__ == '__main__':
                        wandb_group=cfg['wandb']['group'],
                        wandb_name=cfg['name'],
                        wandb_id=args.wandb_id,
-                       after_train=False)
+                       after_train=False,
+                       method='mds')
     if args.wandb_log:
         # wandb.finish()
         try_finish_wandb()
