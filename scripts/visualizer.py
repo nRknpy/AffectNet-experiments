@@ -9,6 +9,7 @@ from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
+import pandas as pd
 
 
 labeled_valence = {
@@ -62,20 +63,29 @@ def hidden_tokens(model, dataset, device):
     return tokens_list, torch.tensor(labels)
 
 
-def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds'] = 'umap'):
+def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds', 'csv'] = 'mds', csv_name: str = None):
     if method == 'umap':
         compress = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
+        zs = compress.fit_transform(tokens.numpy())
+        ys = labels.numpy()
     elif method == 'mds':
         compress = MDS(n_components=2, random_state=random_seed, n_init=2)
         tokens = F.normalize(tokens, dim=0)
-    zs = compress.fit_transform(tokens.numpy())
-    ys = labels.numpy()
+        zs = compress.fit_transform(tokens.numpy())
+        ys = labels.numpy()
+    elif method == 'csv':
+        df = pd.read_csv(csv_name, header=None)
+        cols = df.columns
+        zs = df[cols[:-1]].values
+        ys = df[cols[-1]].values
     fig = plt.figure()
     ax = fig.add_subplot()
     ax.set_xlabel('feature-1')
     ax.set_ylabel('feature-2')
     cmap = cm.get_cmap('gist_ncar')
     ax.set_box_aspect(1)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
 
     label2point = {}
     print('plotting tokens...')
@@ -93,38 +103,50 @@ def plot_tokens_category(tokens, labels, n_neighbors, id2label, random_seed, met
     # fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 0.5))
     legend = ax.legend(handles, labels, loc='upper left',
                        bbox_to_anchor=(1, 0.5))
-    return fig, legend
+    return (fig, legend), (zs, ys)
 
 
-def plot_tokens_continuous(tokens, targets, n_neighbors, random_seed, method: Literal['umap', 'mds'] = 'umap'):
+def plot_tokens_continuous(tokens, targets, n_neighbors, random_seed, method: Literal['umap', 'mds', 'csv'] = 'mds', csv_name: str = None):
     if method == 'umap':
         compress = UMAP(n_neighbors=n_neighbors, random_state=random_seed)
+        zs = compress.fit_transform(tokens.numpy())
+        z = targets.numpy()
     elif method == 'mds':
         compress = MDS(n_components=2, random_state=random_seed, n_init=2)
         tokens = F.normalize(tokens, dim=0)
-    zs = np.array(compress.fit_transform(tokens.numpy()))
+        zs = compress.fit_transform(tokens.numpy())
+        z = targets.numpy()
+    elif method == 'csv':
+        df = pd.read_csv(csv_name, header=None)
+        cols = df.columns
+        zs = df[cols[:-1]].values
+        z = df[cols[-1]].values
     x = zs[:, 0]
     y = zs[:, 1]
-    z = targets.numpy()
     fig = plt.figure()
     ax = fig.add_subplot()
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel('feature-1')
     ax.set_ylabel('feature-2')
     ax.set_box_aspect(1)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
 
     mp = ax.scatter(x, y,
-                    alpha=1,
+                    alpha=0.6,
                     c=z,
-                    cmap='Oranges',
+                    cmap='turbo',
                     vmin=-1,
                     vmax=1,
-                    s=3)
+                    s=5)
     fig.colorbar(mp, ax=ax)
-    return fig
+    return fig, (zs, z)
 
 
-def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds'] = 'umap'):
+def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, random_seed, method: Literal['umap', 'mds', 'csv'] = 'mds', csv_name: str = None):
+    if method == 'csv':
+        print('saving to csv file is not implemented.')
+
     ys = labels.numpy()
     vmax = len(set(ys))
     fig = plt.figure(figsize=(100, 8))
@@ -156,4 +178,4 @@ def plot_hidden_tokens_category(tokens_list, labels, n_neighbors, id2label, rand
         labels_, handles = zip(*sorted(label2point.items()))
     # legend = fig.legend(
     #     handles, labels_, loc='upper center', ncol=8, fontsize=100)
-    return fig
+    return fig, (None, None)

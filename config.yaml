@@ -6,6 +6,6 @@ hydra:
     dir: ./
 
 defaults:
-  - exp: default
+  - exp: contrastive/contrastive-default
   - override hydra/hydra_logging: none
   - override hydra/job_logging: none

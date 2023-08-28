@@ -1,19 +1,19 @@
-name: contrastive
+name: CL_valaro_after_expression_z64_bs512
 type: contrastive
 cuda_devices: [0, 1, 2, 3]
 random_seed: 0
 
-supervised: false
-label: expression
+supervised: true
+label: valence-arousal
 
 model:
-  model_ckpt: google/vit-base-patch16-224-in21k
+  model_ckpt: ./outputs/CL_expression_z64_bs512/model
   z_dims: 64
 
 train:
   num_epochs: 10
-  batch_size: 16
-  learning_rate: 0.00001
+  batch_size: 512
+  learning_rate: 0.00005
   weight_decay: 0.0001
   warmup_steps: 0
   logging_strategy: steps
@@ -32,5 +32,5 @@ data:
     - 10
 
 wandb:
-  project: test-contrastive
-  group: test
+  project: Affectnet-vit
+  group: A100-CL
