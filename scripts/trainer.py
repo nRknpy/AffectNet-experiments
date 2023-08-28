@@ -58,10 +58,13 @@ class SupConTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get('labels')
-        bsz = labels.shape[0]
         outputs = model(pixel_values=inputs.get(
             'pixel_values'), output_hidden_states=True)
         features = outputs.get('logits')
+        if labels:
+            bsz = labels.shape[0]
+        else:
+            bsz = features.shape[0] // 2
         features = F.normalize(features, dim=1)
         f1, f2 = torch.split(features, [bsz, bsz])
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
