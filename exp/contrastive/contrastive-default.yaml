@@ -1,24 +1,26 @@
 name: contrastive
 type: contrastive
 cuda_devices: [0, 1, 2, 3]
+random_seed: 0
 
-supervised: true
+supervised: false
 label: expression
 
 model:
   model_ckpt: google/vit-base-patch16-224-in21k
-  z_dims: 128
+  z_dims: 64
 
 train:
   num_epochs: 10
   batch_size: 16
   learning_rate: 0.00001
   weight_decay: 0.0001
+  warmup_steps: 0
   logging_strategy: steps
-  logging_steps: 1000
+  logging_steps: 50
 
 data:
-  images_root: ../Affectnet/
+  images_root: ../Affectnet/Manually_Annotated/Manually_Annotated_Images/
   train_csv: ../Affectnet/training.csv
   val_csv: ../Affectnet/validation.csv
   train_invalid_files:

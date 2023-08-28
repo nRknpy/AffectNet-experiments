@@ -7,7 +7,7 @@ supervised: true
 label: expression
 
 model:
-  model_ckpt: /outputs/CL_valaro_z64_bs512/model
+  model_ckpt: ./outputs/CL_valaro_z64_bs512/model
   z_dims: 64
 
 train:

@@ -1,0 +1,2 @@
+python scripts/main_contrastive.py exp=CL_expression_after_valaro_z64_bs512
+python scripts/main_contrastive.py exp=CL_valaro_after_expression_z64_bs512

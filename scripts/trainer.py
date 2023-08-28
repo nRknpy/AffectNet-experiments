@@ -61,7 +61,7 @@ class SupConTrainer(Trainer):
         outputs = model(pixel_values=inputs.get(
             'pixel_values'), output_hidden_states=True)
         features = outputs.get('logits')
-        if labels:
+        if labels is not None:
             bsz = labels.shape[0]
         else:
             bsz = features.shape[0] // 2
