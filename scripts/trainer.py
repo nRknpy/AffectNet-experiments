@@ -9,6 +9,51 @@ from KDEweightedMSE.losses import KDEWeightedMSESc
 from losses import ContinuousSupConLoss
 
 
+class AlternatingTrainer(Trainer):
+    def __init__(self,
+                 loss_weights = [1.0, 1.0],
+                 model=None,
+                 args=None,
+                 data_collator=None,
+                 train_dataset=None,
+                 eval_dataset=None,
+                 tokenizer=None,
+                 model_init=None,
+                 compute_metrics=None,
+                 callbacks=None,
+                 optimizers=(None, None),
+                 preprocess_logits_for_metrics=None):
+        super().__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer,
+                         model_init, compute_metrics, callbacks, optimizers, preprocess_logits_for_metrics)
+        self.loss_fct1 = ContinuousSupConLoss()
+        self.loss_fct2 = SupConLoss()
+        self.loss_weights = loss_weights
+    
+    def compute_loss(self, model, inputs, return_outputs=False):
+        inputs1, inputs2 = inputs
+        labels1 = inputs1.get('labels')
+        bsz1 = labels1.shape[0]
+        labels2 = inputs2.get('labels')
+        bsz2 = labels2.shape[0]
+        
+        outputs1 = model(pixel_values=inputs1.get('pixel_values'), output_hidden_states=True)
+        features1 = outputs1.get('logits')
+        features1 = F.normalize(features1, dim=1)
+        f11, f12 = torch.split(features1, [bsz1, bsz1])
+        features1 = torch.cat([f11.unsqueeze(1), f12.unsqueeze(1)], dim=1)
+        loss1 = self.loss_fct1(features1, labels1)
+        
+        outputs2 = model(pixel_values=inputs2.get('pixel_values'), output_hidden_states=True)
+        features2 = outputs2.get('logits')
+        features2 = F.normalize(features2, dim=1)
+        f21, f22 = torch.split(features2, [bsz2, bsz2])
+        features2 = torch.cat([f21.unsqueeze(1), f22.unsqueeze(1)], dim=1)
+        loss2 = self.loss_fct2(features2, labels2)
+        
+        loss = self.loss_weights[0] * loss1 + self.loss_weights[1] * loss2
+        return (loss, [features1, features2]) if return_outputs else loss
+
+
 class ContinuousSupConTrainer(Trainer):
     def __init__(self,
                  model=None,

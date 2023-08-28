@@ -49,7 +49,8 @@ class _ContrastiveExpConfig:
     cuda_devices: List[int] = field(default_factory=lambda: [0, 1, 2, 3])
     supervised: bool = True
     label: Literal['expression', 'categorical-valence',
-                   'valence', 'arousal', 'valence-arousal', 'landmark'] = 'expression'
+                   'valence', 'arousal', 'valence-arousal',
+                   'landmark', 'alter_valaro_expression'] = 'expression'
     model: ContrastiveModelConfig = ContrastiveModelConfig()
     train: TrainConfig = TrainConfig()
     data: DataConfig = DataConfig()
@@ -82,7 +83,7 @@ class FinetuningExpConfig:
 
 
 cfg_label = ('expression', 'categorical-valence', 'valence',
-             'arousal', 'valence-arousal', 'landmark')
+             'arousal', 'valence-arousal', 'landmark', 'alter_valaro_expression')
 cfg_target = ('expression', 'valence', 'arousal', 'valence-arousal')
 
 

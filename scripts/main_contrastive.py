@@ -2,12 +2,14 @@ import os
 from typing import Any, Dict, Tuple
 import wandb
 from evaluate import evaluate
-from trainer import SupConTrainer, ContinuousSupConTrainer
+from trainer import SupConTrainer, ContinuousSupConTrainer, AlternatingTrainer
 from dataset import (AffectNetDatasetForSupConWithCategoricalValence,
                      AffectNetDatasetForSupConWithValence,
                      AffectNetDatasetForSupConWithArousal,
                      AffectNetDatasetForSupConWithValenceArousal,
-                     AffectNetDatasetForSupConWithLandmark)
+                     AffectNetDatasetForSupConWithLandmark,
+                     AlternatingDataset,
+                     AlternatingCollator)
 from model import load_model
 from options import options, Options
 from config import ContrastiveExpConfig, validate_cfg
@@ -103,6 +105,20 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                                         transform2=transform2,
                                                         exclude_label=cfg.exp.data.exclude_labels,
                                                         invalid_files=cfg.exp.data.exclude_labels)
+    elif cfg.exp.label == 'alter_valaro_expression':
+        valaro_dataset = AffectNetDatasetForSupConWithValenceArousal(cfg.exp.data.train_csv,
+                                                                     cfg.exp.data.images_root,
+                                                                     transform1=transform1,
+                                                                     transform2=transform2,
+                                                                     exclude_label=cfg.exp.data.exclude_labels,
+                                                                     invalid_files=cfg.exp.data.exclude_labels)
+        expression_dataset = AffectNetDatasetForSupCon(cfg.exp.data.train_csv,
+                                                       cfg.exp.data.images_root,
+                                                       transform1=transform1,
+                                                       transform2=transform2,
+                                                       exclude_label=cfg.exp.data.exclude_labels,
+                                                       invalid_files=cfg.exp.data.exclude_labels)
+        dataset = AlternatingDataset(valaro_dataset, expression_dataset)
     return dataset
 
 
@@ -165,6 +181,15 @@ def main(cfg: ContrastiveExpConfig):
             trainer_args,
             train_dataset=train_dataset,
             data_collator=ContrastiveCollator(return_labels=opt.return_labels),
+            tokenizer=feature_extractor,
+        )
+    if cfg.exp.label == 'alter_valaro_expression':
+        trainer = AlternatingTrainer(
+            [1.0, 1.0],
+            model,
+            trainer_args,
+            train_dataset=train_dataset,
+            data_collator=AlternatingCollator(),
             tokenizer=feature_extractor,
         )
     else:
