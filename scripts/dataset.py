@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import Dataset
 from torchaffectnet.datasets import AffectNetDatasetForSupCon
 from typing import List, Tuple
 
@@ -8,6 +9,20 @@ categorical_valence_id2label = {
     1: '-0.5 <= valence <= 0.5',
     2: '0.5 < valence',
 }
+
+
+class AlternatingDataset(Dataset):
+    def __init__(self, dataset1, dataset2):
+        self.dataset1 = dataset1
+        self.dataset2 = dataset2
+
+    def __len__(self):
+        return max(len(self.dataset1), len(self.dataset2))
+
+    def __getitem__(self, idx):
+        data1 = self.dataset1[idx]
+        data2 = self.dataset2[idx]
+        return data1, data2
 
 
 class AffectNetDatasetForSupConWithCategoricalValence(AffectNetDatasetForSupCon):
