@@ -5,15 +5,23 @@ import signal
 import subprocess
 import threading
 import wandb
+import numpy as np
 
 from torchaffectnet.const import ID2EXPRESSION
+
+
+def save_token_and_target(tokens, targets, destination):
+    data = np.column_stack((tokens, targets))
+    np.savetxt(destination, data, delimiter=',')
+    return tokens, targets
 
 
 def exclude_id(exclude_labels: List[int]):
     base_id2label = ID2EXPRESSION
     label_list = []
     for k, v in base_id2label.items():
-        if k in exclude_labels: continue
+        if k in exclude_labels:
+            continue
         label_list.append(v)
     id2label = {}
     for i, v in enumerate(label_list):
@@ -35,13 +43,14 @@ def force_finish_wandb():
     else:
         print('Cannot find wandb process-id.')
         return
-    
+
     print('Trying to kill wandb process...')
     try:
         os.kill(pid, signal.SIGKILL)
         print(f"Process with PID {pid} killed successfully.")
     except OSError:
         print(f"Failed to kill process with PID {pid}.")
+
 
 def try_finish_wandb():
     threading.Timer(60, force_finish_wandb).start()

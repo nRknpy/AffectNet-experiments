@@ -24,7 +24,7 @@ from PIL import Image
 from visualizer import CLS_tokens, hidden_tokens, head_outputs, plot_tokens_category, plot_tokens_continuous, plot_hidden_tokens_category
 from config import ContrastiveExpConfig, FinetuningExpConfig
 from options import Options, options
-from utils import exclude_id, try_finish_wandb
+from utils import exclude_id, try_finish_wandb, save_token_and_target
 
 
 @dataclass
@@ -43,12 +43,12 @@ class EvaluationMaterial:
 
 plot_output_names = [
     'emotion',
-    'categorical_valence',
+    # 'categorical_valence',
     'valence',
     'arousal',
-    'hidden_layers',
+    # 'hidden_layers',
     'head_emotion',
-    'head_categorical_valence',
+    # 'head_categorical_valence',
     'head_valence',
     'head_arousal',
 ]
@@ -56,12 +56,12 @@ plot_output_names = [
 
 visualizers = [
     VisualizerFunctions(CLS_tokens, plot_tokens_category),
-    VisualizerFunctions(CLS_tokens, plot_tokens_category),
+    # VisualizerFunctions(CLS_tokens, plot_tokens_category),
     VisualizerFunctions(CLS_tokens, plot_tokens_continuous),
     VisualizerFunctions(CLS_tokens, plot_tokens_continuous),
-    VisualizerFunctions(hidden_tokens, plot_hidden_tokens_category),
+    # VisualizerFunctions(hidden_tokens, plot_hidden_tokens_category),
     VisualizerFunctions(head_outputs, plot_tokens_category),
-    VisualizerFunctions(head_outputs, plot_tokens_category),
+    # VisualizerFunctions(head_outputs, plot_tokens_category),
     VisualizerFunctions(head_outputs, plot_tokens_continuous),
     VisualizerFunctions(head_outputs, plot_tokens_continuous),
 ]
@@ -109,12 +109,12 @@ def prepare_materials(images_root: str, csvfile: str, exclude_labels: List[int],
 
     datasets = [
         category_dataset,
-        cat_valence_dataset,
+        # cat_valence_dataset,
         valence_dataset,
         arousal_dataset,
-        hidden_layer_dataset,
+        # hidden_layer_dataset,
         category_dataset,
-        cat_valence_dataset,
+        # cat_valence_dataset,
         valence_dataset,
         arousal_dataset,
     ]
@@ -123,12 +123,12 @@ def prepare_materials(images_root: str, csvfile: str, exclude_labels: List[int],
 
     id2labels = [
         expression_id2label,
-        categorical_valence_id2label,
+        # categorical_valence_id2label,
         None,
         None,
+        # expression_id2label,
         expression_id2label,
-        expression_id2label,
-        categorical_valence_id2label,
+        # categorical_valence_id2label,
         None,
         None,
     ]
@@ -230,16 +230,23 @@ def evaluate(images_root,
     for material in materials:
         tokens, targets = material.visualizer.tokens(
             model, material.dataset, device)
+        save_token_and_target(tokens, targets, os.path.join(
+            output_dir, material.output_name + '_raw.csv'))
         if material.id2label == None:
-            fig = material.visualizer.plotter(
+            fig, (processed_tokens, processed_targets) = material.visualizer.plotter(
                 tokens, targets, umap_n_neighbors, random_seed, method=method)
+            save_token_and_target(processed_tokens, processed_targets, os.path.join(
+                output_dir, material.output_name + f'_{method}' + '.csv'))
             fig.savefig(os.path.join(
                 output_dir, material.output_name+f'_{method}'+'.svg'), bbox_inches='tight')
             fig.savefig(os.path.join(
                 output_dir, material.output_name+f'_{method}'+'.png'), bbox_inches='tight')
         else:
-            fig = material.visualizer.plotter(
+            fig, (processed_tokens, processed_targets) = material.visualizer.plotter(
                 tokens, targets, umap_n_neighbors, material.id2label, random_seed, method=method)
+            if processed_tokens is not None:
+                save_token_and_target(processed_tokens, processed_targets, os.path.join(
+                    output_dir, material.output_name + f'_{method}' + '.csv'))
             legend = None
             if isinstance(fig, tuple):
                 fig, legend = fig
