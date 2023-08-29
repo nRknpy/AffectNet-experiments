@@ -173,7 +173,7 @@ def evaluate(images_root,
              wandb_name=None,
              wandb_id=None,
              after_train=False,
-             method='umap'):
+             method='mds'):
     if wandb_log:
         if wandb_resume:
             if wandb_id == None:
