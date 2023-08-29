@@ -1,5 +1,9 @@
+from typing import Dict, Any
+
 import torch
+from torch.utils.data import Dataset
 from torchaffectnet.datasets import AffectNetDatasetForSupCon
+from torchaffectnet.collators import Collator
 from typing import List, Tuple
 
 
@@ -8,6 +12,68 @@ categorical_valence_id2label = {
     1: '-0.5 <= valence <= 0.5',
     2: '0.5 < valence',
 }
+
+
+class AlternatingDataset(Dataset):
+    def __init__(self, dataset1, dataset2):
+        self.dataset1 = dataset1
+        self.dataset2 = dataset2
+
+    def __len__(self):
+        return max(len(self.dataset1), len(self.dataset2))
+
+    def __getitem__(self, idx):
+        data1 = self.dataset1[idx]
+        data2 = self.dataset2[idx]
+        return data1, data2
+
+
+class AlternatingCollator(Collator):
+    def __init__(self, return_labels=[True, True]) -> None:
+        super().__init__()
+        self.return_labels1 = return_labels[0]
+        self.return_labels2 = return_labels[1]
+    
+    def collate_fn(self, examples) -> Dict[str, Any]:
+        data1, data2 = zip(*examples)
+        if self.return_labels1:
+            data1_imgs, data1_targets = zip(*data1)
+            data1_targets = torch.stack(data1_targets)
+        else:
+            data1_imgs = data1
+        
+        if self.return_labels2:
+            data2_imgs, data2_targets = zip(*data2)
+            data2_targets = torch.stack(data2_targets)
+        else:
+            data2_imgs = data2
+        
+        data1_imgs1, data1_imgs2 = zip(*data1_imgs)
+        data1_imgs1 = torch.stack(data1_imgs1)
+        data1_imgs2 = torch.stack(data1_imgs2)
+        
+        data2_imgs1, data2_imgs2 = zip(*data2_imgs)
+        data2_imgs1 = torch.stack(data2_imgs1)
+        data2_imgs2 = torch.stack(data2_imgs2)
+        
+        pixel_values1 = torch.cat([data1_imgs1, data1_imgs2])
+        pixel_values2 = torch.cat([data2_imgs1, data2_imgs2])
+        
+        output = []
+        if self.return_labels1:
+            output.append(
+                {'pixel_values': pixel_values1, 'labels': data1_targets}
+            )
+        else:
+            output.append({'pixel_values': pixel_values1})
+        if self.return_labels2:
+            output.append(
+                {'pixel_values': pixel_values2, 'labels': data2_targets}
+            )
+        else:
+            output.append({'pixel_values': pixel_values2})
+        
+        return output
 
 
 class AffectNetDatasetForSupConWithCategoricalValence(AffectNetDatasetForSupCon):
