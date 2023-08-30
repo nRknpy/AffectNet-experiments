@@ -15,65 +15,49 @@ categorical_valence_id2label = {
 
 
 class AlternatingDataset(Dataset):
-    def __init__(self, dataset1, dataset2):
+    def __init__(self, dataset1, dataset2, batch_size, alter_steps):
         self.dataset1 = dataset1
         self.dataset2 = dataset2
+        self.batch_size = batch_size
+        self.alter_steps = alter_steps
 
     def __len__(self):
         return max(len(self.dataset1), len(self.dataset2))
 
     def __getitem__(self, idx):
-        data1 = self.dataset1[idx]
-        data2 = self.dataset2[idx]
-        return data1, data2
+        if (idx // (self.batch_size * self.alter_steps)) % 2 == 0:
+            data = self.dataset1[idx]
+            dataset_id = 0
+        else:
+            data = self.dataset2[idx]
+            dataset_id = 1
+        return data, dataset_id
 
 
-class AlternatingCollator(Collator):
+class AlternatingContrastiveCollator(Collator):
     def __init__(self, return_labels=[True, True]) -> None:
         super().__init__()
-        self.return_labels1 = return_labels[0]
-        self.return_labels2 = return_labels[1]
+        self.return_labels = return_labels
     
     def collate_fn(self, examples) -> Dict[str, Any]:
-        data1, data2 = zip(*examples)
-        if self.return_labels1:
-            data1_imgs, data1_targets = zip(*data1)
-            data1_targets = torch.stack(data1_targets)
+        data, dataset_id = zip(*examples)
+        dataset_id = dataset_id[0]
+        if self.return_labels[dataset_id]:
+            imgs, targets = zip(*data)
+            targets = torch.stack(targets)
         else:
-            data1_imgs = data1
+            imgs = data
         
-        if self.return_labels2:
-            data2_imgs, data2_targets = zip(*data2)
-            data2_targets = torch.stack(data2_targets)
+        imgs1, imgs2 = zip(*imgs)
+        imgs1 = torch.stack(imgs1)
+        imgs2 = torch.stack(imgs2)
+        
+        pixel_values = torch.cat([imgs1, imgs2])
+        
+        if self.return_labels[dataset_id]:
+            return {'pixel_values': pixel_values, 'labels': targets, 'dataset_id': dataset_id}
         else:
-            data2_imgs = data2
-        
-        data1_imgs1, data1_imgs2 = zip(*data1_imgs)
-        data1_imgs1 = torch.stack(data1_imgs1)
-        data1_imgs2 = torch.stack(data1_imgs2)
-        
-        data2_imgs1, data2_imgs2 = zip(*data2_imgs)
-        data2_imgs1 = torch.stack(data2_imgs1)
-        data2_imgs2 = torch.stack(data2_imgs2)
-        
-        pixel_values1 = torch.cat([data1_imgs1, data1_imgs2])
-        pixel_values2 = torch.cat([data2_imgs1, data2_imgs2])
-        
-        output = []
-        if self.return_labels1:
-            output.append(
-                {'pixel_values': pixel_values1, 'labels': data1_targets}
-            )
-        else:
-            output.append({'pixel_values': pixel_values1})
-        if self.return_labels2:
-            output.append(
-                {'pixel_values': pixel_values2, 'labels': data2_targets}
-            )
-        else:
-            output.append({'pixel_values': pixel_values2})
-        
-        return output
+            return {'pixel_values': pixel_values, 'dataset_id': dataset_id}
 
 
 class AffectNetDatasetForSupConWithCategoricalValence(AffectNetDatasetForSupCon):
