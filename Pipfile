@@ -21,6 +21,14 @@ hydra-core = "*"
 omegaconf = "*"
 transformers = "*"
 torchaffectnet = {git = "https://github.com/nRknpy/AffectNet_torch.git"}
+optuna = "==3.2.0"
+pot = "==0.9.0"
+pymysql = "*"
+seaborn = "*"
+sqlalchemy = "*"
+sqlalchemy-utils = "*"
+tqdm = "*"
+umap-learn = "*"
 
 [dev-packages]
 autopep8 = "*"

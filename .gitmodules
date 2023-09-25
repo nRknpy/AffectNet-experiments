@@ -4,3 +4,6 @@
 [submodule "scripts/KDEweightedMSE"]
 	path = scripts/KDEweightedMSE
 	url = https://github.com/nRknpy/KDEweightedMSE.git
+[submodule "notebooks/GWTune"]
+	path = notebooks/GWTune
+	url = https://github.com/oizumi-lab/GWTune.git
