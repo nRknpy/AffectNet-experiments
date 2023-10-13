@@ -118,7 +118,8 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                                        transform2=transform2,
                                                        exclude_label=cfg.exp.data.exclude_labels,
                                                        invalid_files=cfg.exp.data.exclude_labels)
-        dataset = AlternatingDataset(valaro_dataset, expression_dataset, batch_size=int(cfg.exp.train.batch_size / device_count) * device_count, alter_steps=250)
+        dataset = AlternatingDataset(valaro_dataset, expression_dataset, batch_size=int(
+            cfg.exp.train.batch_size / device_count) * device_count, alter_steps=250)
     return dataset
 
 
@@ -153,7 +154,8 @@ def main(cfg: ContrastiveExpConfig):
     feature_extractor, model = load_model(cfg, opt)
     # if torch.cuda.device_count() > 1:
     #     model = DataParallel(model)
-    train_dataset = prepare_dataset(cfg, opt, feature_extractor, torch.cuda.device_count())
+    train_dataset = prepare_dataset(
+        cfg, opt, feature_extractor, torch.cuda.device_count())
 
     # Train
     print('Training...')
@@ -164,7 +166,8 @@ def main(cfg: ContrastiveExpConfig):
         os.path.join(output_dir, 'checkpoints'),
         save_strategy='epoch',
         learning_rate=cfg.exp.train.learning_rate,
-        per_device_train_batch_size=int(cfg.exp.train.batch_size / torch.cuda.device_count()),
+        per_device_train_batch_size=int(
+            cfg.exp.train.batch_size / torch.cuda.device_count()),
         num_train_epochs=cfg.exp.train.num_epochs,
         weight_decay=cfg.exp.train.weight_decay,
         warmup_steps=cfg.exp.train.warmup_steps,
@@ -182,7 +185,7 @@ def main(cfg: ContrastiveExpConfig):
             data_collator=ContrastiveCollator(return_labels=opt.return_labels),
             tokenizer=feature_extractor,
         )
-    if cfg.exp.label == 'alter_valaro_expression':
+    elif cfg.exp.label == 'alter_valaro_expression':
         trainer = AlternatingTrainer(
             model,
             trainer_args,
