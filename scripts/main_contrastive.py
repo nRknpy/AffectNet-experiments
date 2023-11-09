@@ -1,4 +1,5 @@
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 from typing import Any, Dict, Tuple
 import wandb
 from evaluate import evaluate
@@ -130,8 +131,8 @@ def main(cfg: ContrastiveExpConfig):
         exit(-1)
     validate_cfg(cfg)
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
-        map(str, cfg.exp.cuda_devices))
+    # os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
+    #     map(str, cfg.exp.cuda_devices))
 
     import torch
     from torch.nn.parallel import DataParallel

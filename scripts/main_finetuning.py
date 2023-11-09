@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
+
 from torchvision.transforms import Compose, ToTensor, Resize, Normalize, RandomAffine
 from utils import try_finish_wandb
 from transformers import ViTFeatureExtractor, ViTForImageClassification, TrainingArguments, EarlyStoppingCallback
@@ -13,7 +16,6 @@ from trainer import WeightedLossTrainer, KDEwMSETrainer
 from evaluate import evaluate, compute_rmse, compute_accuracy
 import wandb
 from typing import Any, Dict, Tuple
-import os
 
 
 def prepare_dataset(cfg: FinetuningExpConfig, opt: Options, feature_extractor: Tuple[ViTFeatureExtractor, Dict[str, Any]] | ViTFeatureExtractor):
@@ -98,8 +100,8 @@ def main(cfg: FinetuningExpConfig):
         exit(-1)
     validate_cfg(cfg)
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
-        map(str, cfg.exp.cuda_devices))
+    # os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(
+    #     map(str, cfg.exp.cuda_devices))
 
     import torch
     from torch.nn.parallel import DataParallel
@@ -186,7 +188,7 @@ def main(cfg: FinetuningExpConfig):
             callbacks=[EarlyStoppingCallback(
                 early_stopping_patience=3, early_stopping_threshold=0.0002)],
         )
-    
+
     trainer.train()
 
     if isinstance(trainer.model, DataParallel):
