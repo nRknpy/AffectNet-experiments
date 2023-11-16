@@ -14,6 +14,11 @@ categorical_valence_id2label = {
 }
 
 
+class AffeLangDataset(AffectNetDatasetForSupCon):
+    def labeling(self, idx):
+        return torch.tensor([self.df['valence'][idx], self.df['arousal'][idx], self.df['expression'][idx]], dtype=torch.float)
+
+
 class AlternatingDataset(Dataset):
     def __init__(self, dataset1, dataset2, batch_size, alter_steps):
         self.dataset1 = dataset1
@@ -38,7 +43,7 @@ class AlternatingContrastiveCollator(Collator):
     def __init__(self, return_labels=[True, True]) -> None:
         super().__init__()
         self.return_labels = return_labels
-    
+
     def collate_fn(self, examples) -> Dict[str, Any]:
         data, dataset_id = zip(*examples)
         dataset_id = dataset_id[0]
@@ -47,13 +52,13 @@ class AlternatingContrastiveCollator(Collator):
             targets = torch.stack(targets)
         else:
             imgs = data
-        
+
         imgs1, imgs2 = zip(*imgs)
         imgs1 = torch.stack(imgs1)
         imgs2 = torch.stack(imgs2)
-        
+
         pixel_values = torch.cat([imgs1, imgs2])
-        
+
         if self.return_labels[dataset_id]:
             return {'pixel_values': pixel_values, 'labels': targets, 'dataset_id': dataset_id}
         else:
@@ -102,8 +107,8 @@ class AffectNetDatasetForSupConWithLandmark(AffectNetDatasetForSupCon):
             coordinates = [float(val) for val in landmark]
             x = torch.tensor(coordinates[::2], dtype=torch.float)
             y = torch.tensor(coordinates[1::2], dtype=torch.float)
-            x = (x - x_min)/w
-            y = (y - y_min)/h
+            x = (x - x_min) / w
+            y = (y - y_min) / h
             x_coordinates.append(x)
             y_coordinates.append(y)
         self.x_landmarks = torch.stack(x_coordinates)

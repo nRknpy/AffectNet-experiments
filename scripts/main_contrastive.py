@@ -3,14 +3,15 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 from typing import Any, Dict, Tuple
 import wandb
 from evaluate import evaluate
-from trainer import SupConTrainer, ContinuousSupConTrainer, AlternatingTrainer
+from trainer import SupConTrainer, ContinuousSupConTrainer, AlternatingTrainer, AffeAndLangTrainer
 from dataset import (AffectNetDatasetForSupConWithCategoricalValence,
                      AffectNetDatasetForSupConWithValence,
                      AffectNetDatasetForSupConWithArousal,
                      AffectNetDatasetForSupConWithValenceArousal,
                      AffectNetDatasetForSupConWithLandmark,
                      AlternatingDataset,
-                     AlternatingContrastiveCollator)
+                     AlternatingContrastiveCollator,
+                     AffeLangDataset)
 from model import load_model
 from options import options, Options
 from config import ContrastiveExpConfig, validate_cfg
@@ -121,6 +122,13 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                                        invalid_files=cfg.exp.data.exclude_labels)
         dataset = AlternatingDataset(valaro_dataset, expression_dataset, batch_size=int(
             cfg.exp.train.batch_size / device_count) * device_count, alter_steps=250)
+    elif cfg.exp.label == 'affelang':
+        dataset = AffeLangDataset(cfg.exp.data.train_csv,
+                                  cfg.exp.data.images_root,
+                                  transform1=transform1,
+                                  transform2=transform2,
+                                  exclude_label=cfg.exp.data.exclude_labels,
+                                  invalid_files=cfg.exp.data.exclude_labels)
     return dataset
 
 
@@ -176,6 +184,7 @@ def main(cfg: ContrastiveExpConfig):
         logging_steps=cfg.exp.train.logging_steps,
         remove_unused_columns=False,
         report_to='wandb',
+        lr_scheduler_type='constant' if cfg.exp.label == 'affelang' else 'linear',
     )
 
     if cfg.exp.label == 'expression' or cfg.exp.label == 'categorical-valence' or opt.return_labels == False:
@@ -192,6 +201,14 @@ def main(cfg: ContrastiveExpConfig):
             trainer_args,
             train_dataset=train_dataset,
             data_collator=AlternatingContrastiveCollator(),
+            tokenizer=feature_extractor,
+        )
+    elif cfg.exp.label == 'affelang':
+        trainer = AffeAndLangTrainer(
+            model,
+            trainer_args,
+            train_dataset=train_dataset,
+            data_collator=ContrastiveCollator(return_labels=opt.return_labels),
             tokenizer=feature_extractor,
         )
     else:

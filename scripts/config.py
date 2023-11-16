@@ -50,7 +50,7 @@ class _ContrastiveExpConfig:
     supervised: bool = True
     label: Literal['expression', 'categorical-valence',
                    'valence', 'arousal', 'valence-arousal',
-                   'landmark', 'alter_valaro_expression'] = 'expression'
+                   'landmark', 'alter_valaro_expression', 'affelang'] = 'expression'
     model: ContrastiveModelConfig = ContrastiveModelConfig()
     train: TrainConfig = TrainConfig()
     data: DataConfig = DataConfig()
@@ -83,7 +83,7 @@ class FinetuningExpConfig:
 
 
 cfg_label = ('expression', 'categorical-valence', 'valence',
-             'arousal', 'valence-arousal', 'landmark', 'alter_valaro_expression')
+             'arousal', 'valence-arousal', 'landmark', 'alter_valaro_expression', 'affelang')
 cfg_target = ('expression', 'valence', 'arousal', 'valence-arousal')
 
 
