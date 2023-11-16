@@ -31,7 +31,7 @@ class AffeAndLangTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         current_epoch = self.state.epoch
         affe_rate = 0.5 * \
-            (1 - math.cos(math.pi * current_epoch / self.args.num_train_epochs))
+            (1 + math.cos(math.pi * current_epoch / self.args.num_train_epochs))
 
         labels = inputs.get('labels')
         affe_labels = labels[:, :2]
