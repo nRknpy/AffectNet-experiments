@@ -3,7 +3,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 from typing import Any, Dict, Tuple
 import wandb
 from evaluate import evaluate
-from trainer import SupConTrainer, ContinuousSupConTrainer, AlternatingTrainer, AffeAndLangTrainer
+from trainer import SupConTrainer, ContinuousSupConTrainer, AlternatingTrainer, AffeAndLangTrainer, LangAndAffeTrainer
 from dataset import (AffectNetDatasetForSupConWithCategoricalValence,
                      AffectNetDatasetForSupConWithValence,
                      AffectNetDatasetForSupConWithArousal,
@@ -122,7 +122,7 @@ def prepare_dataset(cfg: ContrastiveExpConfig, opt: Options, feature_extractor: 
                                                        invalid_files=cfg.exp.data.exclude_labels)
         dataset = AlternatingDataset(valaro_dataset, expression_dataset, batch_size=int(
             cfg.exp.train.batch_size / device_count) * device_count, alter_steps=250)
-    elif cfg.exp.label == 'affelang':
+    elif cfg.exp.label in ('affelang', 'langaffe'):
         dataset = AffeLangDataset(cfg.exp.data.train_csv,
                                   cfg.exp.data.images_root,
                                   transform1=transform1,
@@ -205,6 +205,14 @@ def main(cfg: ContrastiveExpConfig):
         )
     elif cfg.exp.label == 'affelang':
         trainer = AffeAndLangTrainer(
+            model,
+            trainer_args,
+            train_dataset=train_dataset,
+            data_collator=ContrastiveCollator(return_labels=opt.return_labels),
+            tokenizer=feature_extractor,
+        )
+    elif cfg.exp.label == 'langaffe':
+        trainer = LangAndAffeTrainer(
             model,
             trainer_args,
             train_dataset=train_dataset,

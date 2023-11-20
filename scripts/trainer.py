@@ -27,11 +27,12 @@ class AffeAndLangTrainer(Trainer):
         super().__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer,
                          model_init, compute_metrics, callbacks, optimizers, preprocess_logits_for_metrics)
         self.loss_fct = AffeAndLangSupConLoss()
+        self.alpha_fct = lambda epoch: 0.5 * \
+            (1 + math.cos(math.pi * epoch / self.args.num_train_epochs))
 
     def compute_loss(self, model, inputs, return_outputs=False):
-        current_epoch = self.state.epoch
-        affe_rate = 0.5 * \
-            (1 + math.cos(math.pi * current_epoch / self.args.num_train_epochs))
+        current_epoch = int(self.state.epoch)
+        affe_rate = self.alpha_fct(current_epoch)
 
         labels = inputs.get('labels')
         affe_labels = labels[:, :2]
@@ -45,6 +46,14 @@ class AffeAndLangTrainer(Trainer):
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
         loss = self.loss_fct(features, affe_labels, lang_labels, affe_rate)
         return (loss, features) if return_outputs else loss
+
+
+class LangAndAffeTrainer(AffeAndLangTrainer):
+    def __init__(self, model=None, args=None, data_collator=None, train_dataset=None, eval_dataset=None, tokenizer=None, model_init=None, compute_metrics=None, callbacks=None, optimizers=(None, None), preprocess_logits_for_metrics=None):
+        super().__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer,
+                         model_init, compute_metrics, callbacks, optimizers, preprocess_logits_for_metrics)
+        self.alpha_fct = lambda epoch: 0.5 * \
+            (1 - math.cos(math.pi * epoch / self.args.num_train_epochs))
 
 
 class AlternatingTrainer(Trainer):
