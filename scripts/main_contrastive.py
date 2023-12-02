@@ -184,7 +184,7 @@ def main(cfg: ContrastiveExpConfig):
         logging_steps=cfg.exp.train.logging_steps,
         remove_unused_columns=False,
         report_to='wandb',
-        lr_scheduler_type='constant' if cfg.exp.label == 'affelang' else 'linear',
+        lr_scheduler_type='constant'
     )
 
     if cfg.exp.label == 'expression' or cfg.exp.label == 'categorical-valence' or opt.return_labels == False:
